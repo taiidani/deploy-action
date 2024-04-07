@@ -58,6 +58,9 @@ jobs:
           secrets: |
             nomad/creds/deployer secret_id | NOMAD_TOKEN
 
+      - name: install asdf
+        uses: asdf-vm/actions/setup@v3
+
       - name: deploy
         uses: taiidani/deploy-action@main
         env:
