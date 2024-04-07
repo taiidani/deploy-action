@@ -1,0 +1,32 @@
+name: deploy
+inputs:
+  artifact:
+    required: true
+    description: "The artifact identifier, such as a downloadable binary or Docker image name"
+  jobspec:
+    required: true
+    description: "The path to the jobspec to be rendered"
+runs:
+  using: "composite"
+  steps:
+    - name: install asdf
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      uses: asdf-vm/actions/setup@v3
+
+    - name: install tooling
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        asdf plugin-add nomad https://github.com/asdf-community/asdf-hashicorp.git
+        asdf install
+
+    - name: validate
+      shell: bash
+      working-directory: "${{ github.action_path }}/jobs"
+      run: nomad job validate -var 'artifact=${{ inputs.artifact }}' ${{ inputs.jobspec }}
+
+    - name: apply
+      shell: bash
+      working-directory: "${{ github.action_path }}/jobs"
+      run: nomad job run -var 'artifact=${{ inputs.artifact }}' ${{ inputs.jobspec }}

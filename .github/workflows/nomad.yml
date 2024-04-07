@@ -45,10 +45,6 @@ jobs:
     env:
       NOMAD_ADDR: "http://hashistack.taiidani.com:4646"
     steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: taiidani/deploy-action
-
       - name: vault
         id: vault
         uses: hashicorp/vault-action@v3
@@ -62,22 +58,10 @@ jobs:
           secrets: |
             nomad/creds/deployer secret_id | NOMAD_TOKEN
 
-      - name: install asdf
-        uses: asdf-vm/actions/setup@v3
-
-      - name: install tooling
-        run: |
-          asdf plugin-add nomad https://github.com/asdf-community/asdf-hashicorp.git
-          asdf install
-
-      - name: validate
-        working-directory: jobs
+      - name: deploy
+        uses: taiidani/deploy-action@main
         env:
           NOMAD_TOKEN: ${{ steps.vault.outputs.NOMAD_TOKEN }}
-        run: nomad job validate -var 'artifact=${{ inputs.artifact }}' ${{ inputs.jobspec }}
-
-      - name: apply
-        working-directory: jobs
-        env:
-          NOMAD_TOKEN: ${{ steps.vault.outputs.NOMAD_TOKEN }}
-        run: nomad job run -var 'artifact=${{ inputs.artifact }}' ${{ inputs.jobspec }}
+        with:
+          artifact: ${{ inputs.artifact }}
+          jobspec: ${{ inputs.jobspec }}
