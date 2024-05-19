@@ -21,7 +21,9 @@ job "no-time-to-explain" {
       }
 
       env {
-        CMD_TZ = "EDT"
+        SENTRY_ENVIRONMENT = "prod"
+        SENTRY_DSN         = "https://7fd4c058e6685608ada24d63281f6d59@o55858.ingest.us.sentry.io/4507279390539776"
+        CMD_TZ             = "EDT"
       }
 
       template {
