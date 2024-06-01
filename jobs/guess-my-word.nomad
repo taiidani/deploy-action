@@ -1,6 +1,5 @@
 variable "artifact" {
-  type    = string
-  default = "https://rnd-public.sfo3.digitaloceanspaces.com/guess-my-word/guess-my-word-2024.03.03-ad78d8_linux_amd64.tgz"
+  type = string
 }
 
 job "guess-my-word" {

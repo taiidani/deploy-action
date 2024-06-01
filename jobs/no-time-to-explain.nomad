@@ -1,6 +1,5 @@
-variable "tag" {
-  type    = string
-  default = "latest"
+variable "artifact" {
+  type = string
 }
 
 job "no-time-to-explain" {
@@ -14,10 +13,14 @@ job "no-time-to-explain" {
 
   group "no-time-to-explain" {
     task "app" {
-      driver = "docker"
+      driver = "exec"
 
       config {
-        image = "ghcr.io/taiidani/no-time-to-explain:${var.tag}"
+        command = "no-time-to-explain"
+      }
+
+      artifact {
+        source = var.artifact
       }
 
       env {
