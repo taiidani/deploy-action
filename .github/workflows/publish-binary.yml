@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       artifact-name:
-        required: true
+        required: false
         type: string
         default: "artifact"
       filename:
