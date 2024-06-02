@@ -9,7 +9,7 @@ job "uptime" {
   node_pool   = "home"
 
   periodic {
-    cron             = "@daily"
+    crons            = ["@daily"]
     prohibit_overlap = true
   }
 
