@@ -1,11 +1,10 @@
 variable "artifact" {
-  type    = string
-  default = "https://github.com/taiidani/uptime/releases/download/v0.3/uptime_0.3_Linux_x86_64.tar.gz"
+  type = string
 }
 
 job "uptime" {
   datacenters = ["dc1"]
-  type        = "sysbatch"
+  type        = "batch"
   node_pool   = "home"
 
   periodic {
