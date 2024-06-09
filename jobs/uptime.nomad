@@ -27,6 +27,7 @@ job "uptime" {
           "-folder=/data",
           "-exclude=nomad",
           "-exclude=consul",
+          "-exclude=signoz",
           "-exclude=vault",
           "-exclude=containerd",
           "-exclude=1Password",
