@@ -53,9 +53,9 @@ job "homer" {
       port     = "http"
       tags = [
         "traefik.enable=true",
-        "traefik.http.routers.homer.rule=Host(`taiidani.com`, `www.taiidani.com`)",
+        "traefik.http.routers.homer.rule=HostRegexp(`^(www.|)taiidani.com$`)",
         "traefik.http.routers.homer.middlewares=homer@nomad",
-        "traefik.http.routers.homersecure.rule=Host(`taiidani.com`, `www.taiidani.com`)",
+        "traefik.http.routers.homersecure.rule=HostRegexp(`^(www.|)taiidani.com$`)",
         "traefik.http.routers.homersecure.tls=true",
         "traefik.http.routers.homersecure.tls.certresolver=le",
         "traefik.http.routers.homersecure.middlewares=homer@nomad",
