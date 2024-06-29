@@ -1,6 +1,6 @@
 variable "tag" {
   type    = string
-  default = "v2.11.0"
+  default = "v3.1"
 }
 
 job "traefik" {
@@ -41,8 +41,8 @@ job "traefik" {
 # format = "json"
 
 [tracing]
-[tracing.jaeger.collector]
-endpoint = "http://{{ range nomadService "otel-jaeger" }}{{ .Address }}:{{ .Port }}{{ end }}/api/traces?format=jaeger.thrift"
+[tracing.otlp.http]
+endpoint = "http://{{ range nomadService "otel" }}{{ .Address }}:{{ .Port }}{{ end }}/v1/traces"
 
 [entryPoints]
 [entryPoints.web]
