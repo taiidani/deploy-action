@@ -5,7 +5,7 @@ variable "artifact" {
 job "guess-my-word" {
   datacenters = ["dc1"]
   type        = "service"
-  node_pool   = "home"
+  node_pool   = "digitalocean"
 
   update {
     canary            = 1

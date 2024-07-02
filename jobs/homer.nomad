@@ -6,7 +6,7 @@ variable "tag" {
 job "homer" {
   datacenters = ["dc1"]
   type        = "service"
-  node_pool   = "home"
+  node_pool   = "digitalocean"
 
   group "homer" {
     update {

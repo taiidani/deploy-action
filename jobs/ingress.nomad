@@ -3,10 +3,10 @@ variable "tag" {
   default = "v3.1"
 }
 
-job "traefik" {
+job "ingress" {
   datacenters = ["dc1"]
-  type        = "system"
-  node_pool   = "home"
+  type        = "service"
+  node_pool   = "digitalocean"
 
   update {
     auto_revert = true
@@ -28,7 +28,7 @@ job "traefik" {
       }
 
       volume_mount {
-        volume      = "hashistack"
+        volume      = "worker"
         destination = "/data"
         read_only   = "false"
       }
@@ -42,7 +42,7 @@ job "traefik" {
 
 [tracing]
 [tracing.otlp.http]
-endpoint = "http://{{ range nomadService "otel" }}{{ .Address }}:{{ .Port }}{{ end }}/v1/traces"
+endpoint = "http://{{ env "attr.driver.docker.bridge_ip" }}:4318/v1/traces"
 
 [entryPoints]
 [entryPoints.web]
@@ -54,7 +54,6 @@ trustedIPs = ["127.0.0.1/32", "10.0.0.0/8"]
 address = ":443"
 [entryPoints.websecure.proxyProtocol]
 trustedIPs = ["127.0.0.1/32", "10.0.0.0/8"]
-
 
 [certificatesResolvers.le.acme]
 email = "rnixon+traefik@taiidani.com"
@@ -84,9 +83,9 @@ EOF
       }
     }
 
-    volume "hashistack" {
+    volume "worker" {
       type      = "host"
-      source    = "hashistack"
+      source    = "worker"
       read_only = "false"
     }
 
