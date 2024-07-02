@@ -1,2 +1,6 @@
 [env]
+# Add the NOMAD_TOKEN to this file to make it easier to communicate with Nomad
 _.file = '.env'
+
+[tools]
+nomad = "1.8.0"
