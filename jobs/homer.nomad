@@ -63,14 +63,14 @@ job "homer" {
         "traefik.http.middlewares.homer.redirectscheme.scheme=https",
       ]
 
-      // check {
-      //   method   = "GET"
-      //   type     = "http"
-      //   path     = "/"
-      //   port     = "http"
-      //   interval = "10s"
-      //   timeout  = "2s"
-      // }
+      check {
+        method   = "GET"
+        type     = "http"
+        path     = "/"
+        port     = "http"
+        interval = "10s"
+        timeout  = "2s"
+      }
     }
 
     network {
