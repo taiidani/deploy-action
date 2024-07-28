@@ -58,12 +58,6 @@ jobs:
           secrets: |
             nomad/creds/deployer secret_id | NOMAD_TOKEN
 
-      - uses: jdx/mise-action@v2
-        with:
-          install: true
-          cache: true
-          working_directory: ${{ github.action_path }}
-
       - name: deploy
         uses: taiidani/deploy-action@main
         env:
