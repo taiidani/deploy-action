@@ -11,6 +11,11 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: .env file
+      shell: bash
+      working-directory: "${{ github.action_path }}"
+      run: touch .env
+
     - uses: jdx/mise-action@v2
       with:
         install: true
