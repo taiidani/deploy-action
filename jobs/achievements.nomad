@@ -29,7 +29,7 @@ job "achievements" {
       driver = "exec"
 
       config {
-        command = "achievements"
+        command = "app"
       }
 
       artifact {
