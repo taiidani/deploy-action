@@ -1,5 +1,6 @@
 variable "artifact" {
-  type = string
+  type    = string
+  default = "https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/achievements/app-2024.07.28-3ee7e5_linux_amd64.tgz"
 }
 
 job "achievements" {
@@ -34,6 +35,10 @@ job "achievements" {
 
       artifact {
         source = var.artifact
+      }
+
+      env {
+        PORT = "${NOMAD_PORT_web}"
       }
 
       template {
@@ -74,9 +79,7 @@ job "achievements" {
     }
 
     network {
-      port "web" {
-        to = 80
-      }
+      port "web" {}
     }
 
     vault {
