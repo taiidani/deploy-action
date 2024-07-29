@@ -73,7 +73,7 @@ job "achievements" {
       }
 
       resources {
-        cpu    = 50
+        cpu    = 200
         memory = 128
       }
     }
