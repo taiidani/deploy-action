@@ -37,7 +37,8 @@ job "achievements" {
       }
 
       env {
-        PORT = "${NOMAD_PORT_web}"
+        PORT       = "${NOMAD_PORT_web}"
+        GOMEMLIMIT = "120MB"
       }
 
       template {
@@ -72,7 +73,7 @@ job "achievements" {
       }
 
       resources {
-        cpu    = 1024
+        cpu    = 512
         memory = 128
       }
     }
