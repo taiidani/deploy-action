@@ -1,6 +1,5 @@
 variable "artifact" {
-  type    = string
-  default = "https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/achievements/app-2024.07.28-3ee7e5_linux_amd64.tgz"
+  type = string
 }
 
 job "achievements" {
