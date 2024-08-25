@@ -38,7 +38,7 @@ job "achievements" {
 
       env {
         PORT       = "${NOMAD_PORT_web}"
-        GOMEMLIMIT = "120MB"
+        GOMEMLIMIT = "120MiB"
       }
 
       template {
