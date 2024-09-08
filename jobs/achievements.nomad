@@ -38,6 +38,7 @@ job "achievements" {
 
       env {
         PORT       = "${NOMAD_PORT_web}"
+        PUBLIC_URL = "https://achievements.taiidani.com"
         GOMEMLIMIT = "120MiB"
       }
 
