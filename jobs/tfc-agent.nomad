@@ -1,11 +1,11 @@
 variable "tag" {
   type    = string
-  default = "1.15.0"
+  default = "1.17.5"
 }
 
 variable "checksum" {
   type    = string
-  default = "e4e0e7c8849273a2f203af8eb17c020cf815d61517f041877020e16d77e5b640"
+  default = "5f7b7c6ed22b7d85b3e28261edbb2eb1f1aad0bfe890531b8e6f3c2b69a7f44d"
 }
 
 job "tfc-agent" {
@@ -14,7 +14,7 @@ job "tfc-agent" {
   node_pool   = "home"
 
   group "tfc-agent" {
-    count = 1
+    count = 2
 
     restart {
       attempts = 70
