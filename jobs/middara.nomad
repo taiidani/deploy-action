@@ -2,7 +2,7 @@ variable "artifact" {
   type = string
 }
 
-job "achievements" {
+job "middara" {
   datacenters = ["dc1"]
   type        = "service"
   node_pool   = "digitalocean"
@@ -38,37 +38,36 @@ job "achievements" {
 
       env {
         PORT       = "${NOMAD_PORT_web}"
-        PUBLIC_URL = "https://achievements.taiidani.com"
-        GOMEMLIMIT = "120MiB"
+        PUBLIC_URL = "https://middara.taiidani.com"
+        GOMEMLIMIT = "60MiB"
       }
 
       template {
         data        = <<EOF
-            STEAM_KEY="{{with secret "deploy/achievements"}}{{ .Data.data.STEAM_KEY }}{{end}}"
             REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.host }}{{end}}"
             REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
-            REDIS_DB=2
+            REDIS_DB=3
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
         env         = true
       }
 
       service {
-        name     = "achievements"
+        name     = "middara"
         provider = "nomad"
         port     = "web"
         tags = [
           "traefik.enable=true",
-          "traefik.http.routers.achievements.rule=Host(`achievements.taiidani.com`)",
-          "traefik.http.routers.achievements.middlewares=achievements@nomad",
-          "traefik.http.routers.achievementssecure.rule=Host(`achievements.taiidani.com`)",
-          "traefik.http.routers.achievementssecure.tls=true",
-          "traefik.http.routers.achievementssecure.tls.certresolver=le",
-          "traefik.http.routers.achievementssecure.middlewares=achievements@nomad",
-          "traefik.http.middlewares.achievements.redirectscheme.permanent=true",
-          "traefik.http.middlewares.achievements.redirectscheme.scheme=https",
+          "traefik.http.routers.middara.rule=Host(`middara.taiidani.com`)",
+          "traefik.http.routers.middara.middlewares=middara@nomad",
+          "traefik.http.routers.middarasecure.rule=Host(`middara.taiidani.com`)",
+          "traefik.http.routers.middarasecure.tls=true",
+          "traefik.http.routers.middarasecure.tls.certresolver=le",
+          "traefik.http.routers.middarasecure.middlewares=middara@nomad",
+          "traefik.http.middlewares.middara.redirectscheme.permanent=true",
+          "traefik.http.middlewares.middara.redirectscheme.scheme=https",
         ]
 
         check_restart {
