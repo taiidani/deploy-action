@@ -27,7 +27,7 @@ job "lil-dumpster" {
 
       template {
         data        = <<EOF
-            DISCORD_TOKEN="{{with secret "lil-dumpster/kv/discord"}}{{ .Data.data.token }}{{end}}"
+            DISCORD_TOKEN="{{with secret "deploy/lil-dumpster"}}{{ .Data.data.DISCORD_TOKEN }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
         env         = true
@@ -76,7 +76,7 @@ job "lil-dumpster" {
     }
 
     vault {
-      policies = ["hcp-root"]
+      role = "nomad-cluster"
     }
   }
 }

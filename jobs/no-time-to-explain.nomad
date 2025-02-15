@@ -48,7 +48,7 @@ job "no-time-to-explain" {
     }
 
     vault {
-      policies = ["hcp-root"]
+      role = "nomad-cluster"
     }
   }
 }

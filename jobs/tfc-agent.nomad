@@ -59,7 +59,7 @@ job "tfc-agent" {
     }
 
     vault {
-      policies = ["hcp-root"]
+      role = "nomad-cluster"
     }
   }
 }

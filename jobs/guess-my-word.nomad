@@ -107,7 +107,7 @@ job "guess-my-word" {
     }
 
     vault {
-      policies = ["digitalocean-app"]
+      role = "nomad-cluster"
     }
   }
 }

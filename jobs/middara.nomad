@@ -88,7 +88,7 @@ job "middara" {
     }
 
     vault {
-      policies = ["digitalocean-app"]
+      role = "nomad-cluster"
     }
   }
 }

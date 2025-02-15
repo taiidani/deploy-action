@@ -43,7 +43,7 @@ job "taiidani-bot-testing" {
     }
 
     vault {
-      policies = ["hcp-root"]
+      role = "nomad-cluster"
     }
   }
 }

@@ -89,7 +89,7 @@ job "achievements" {
     }
 
     vault {
-      policies = ["digitalocean-app"]
+      role = "nomad-cluster"
     }
   }
 }

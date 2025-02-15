@@ -66,7 +66,7 @@ job "uptime" {
     }
 
     vault {
-      policies = ["hcp-root"]
+      role = "nomad-cluster"
     }
   }
 }
