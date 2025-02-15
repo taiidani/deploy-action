@@ -3,4 +3,4 @@
 _.file = '.env'
 
 [tools]
-nomad = "1.8.0"
+nomad = "1.9.4"
