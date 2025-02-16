@@ -36,7 +36,7 @@ job "uptime" {
       }
 
       env {
-        AWS_ENDPOINT = "https://rnd-public.sfo3.digitaloceanspaces.com"
+        AWS_ENDPOINT = "https://rnd-backups.sfo3.digitaloceanspaces.com"
         AWS_REGION   = "us-east-1"
       }
 
