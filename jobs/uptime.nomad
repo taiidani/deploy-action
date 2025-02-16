@@ -43,8 +43,8 @@ job "uptime" {
       template {
         data        = <<EOF
             {{with secret "credentials/digitalocean/spaces"}}
-            AWS_ACCESS_KEY_ID="{{ .Data.spaces_access_id }}"
-            AWS_SECRET_ACCESS_KEY="{{ .Data.spaces_secret_key }}"
+            AWS_ACCESS_KEY_ID="{{ .Data.data.spaces_access_id }}"
+            AWS_SECRET_ACCESS_KEY="{{ .Data.data.spaces_secret_key }}"
             {{end}}
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
