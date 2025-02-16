@@ -35,13 +35,16 @@ job "uptime" {
         ]
       }
 
+      env {
+        AWS_ENDPOINT = "rnd-public.sfo3.digitaloceanspaces.com"
+      }
+
       template {
         data        = <<EOF
-            {{with secret "aws/creds/uptime"}}
-            AWS_ACCESS_KEY_ID="{{ .Data.access_key }}"
-            AWS_SECRET_ACCESS_KEY="{{ .Data.secret_key }}"
+            {{with secret "credentials/digitalocean/spaces"}}
+            AWS_ACCESS_KEY_ID="{{ .Data.spaces_access_id }}"
+            AWS_SECRET_ACCESS_KEY="{{ .Data.spaces_secret_key }}"
             {{end}}
-
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
         env         = true
