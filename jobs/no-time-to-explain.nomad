@@ -27,6 +27,7 @@ job "no-time-to-explain" {
         SENTRY_ENVIRONMENT = "prod"
         SENTRY_DSN         = "https://7fd4c058e6685608ada24d63281f6d59@o55858.ingest.us.sentry.io/4507279390539776"
         CMD_TZ             = "EDT"
+        PORT               = "${NOMAD_PORT_web}"
       }
 
       template {
@@ -41,10 +42,37 @@ job "no-time-to-explain" {
         env         = true
       }
 
+      service {
+        name     = "no-time-to-explain"
+        provider = "nomad"
+        port     = "web"
+        tags = [
+          "traefik.enable=true",
+          "traefik.http.routers.notimetoexplain.rule=Host(`no-time-to-explain.taiidani.com`)",
+          "traefik.http.routers.notimetoexplain.middlewares=notimetoexplain@nomad",
+          "traefik.http.routers.notimetoexplainsecure.rule=Host(`no-time-to-explain.taiidani.com`)",
+          "traefik.http.routers.notimetoexplainsecure.tls=true",
+          "traefik.http.routers.notimetoexplainsecure.tls.certresolver=le",
+          "traefik.http.routers.notimetoexplainsecure.middlewares=notimetoexplain@nomad",
+          "traefik.http.middlewares.notimetoexplain.redirectscheme.permanent=true",
+          "traefik.http.middlewares.notimetoexplain.redirectscheme.scheme=https",
+        ]
+
+        check_restart {
+          limit           = 3
+          grace           = "15s"
+          ignore_warnings = false
+        }
+      }
+
       resources {
         cpu    = 50
         memory = 32
       }
+    }
+
+    network {
+      port "web" {}
     }
 
     vault {
