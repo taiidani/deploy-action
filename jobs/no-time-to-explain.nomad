@@ -28,6 +28,8 @@ job "no-time-to-explain" {
         SENTRY_DSN         = "https://7fd4c058e6685608ada24d63281f6d59@o55858.ingest.us.sentry.io/4507279390539776"
         CMD_TZ             = "EDT"
         PORT               = "${NOMAD_PORT_web}"
+        URL                = "https://no-time-to-explain.taiidani.com"
+        DISCORD_CLIENT_ID  = "1216152057862426694"
       }
 
       template {
