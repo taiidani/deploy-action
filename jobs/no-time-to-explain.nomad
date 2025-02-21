@@ -29,7 +29,6 @@ job "no-time-to-explain" {
         CMD_TZ             = "EDT"
         PORT               = "${NOMAD_PORT_web}"
         URL                = "https://no-time-to-explain.taiidani.com"
-        DISCORD_CLIENT_ID  = "1216152057862426694"
       }
 
       template {
@@ -39,6 +38,8 @@ job "no-time-to-explain" {
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
             DISCORD_TOKEN="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_TOKEN }}{{end}}"
+            DISCORD_CLIENT_ID="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_CLIENT_ID }}{{end}}"
+            DISCORD_CLIENT_SECRET="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_CLIENT_SECRET }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
         env         = true
