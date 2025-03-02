@@ -8,7 +8,11 @@ job "groceries" {
   node_pool   = "digitalocean"
 
   update {
-    auto_revert = true
+    canary            = 1
+    healthy_deadline  = "2m"
+    progress_deadline = "3m"
+    auto_promote      = true
+    auto_revert       = true
   }
 
   group "groceries" {
