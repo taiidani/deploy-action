@@ -16,6 +16,8 @@ job "groceries" {
   }
 
   group "groceries" {
+    count = 2
+
     task "app" {
       driver = "exec"
 
@@ -32,6 +34,8 @@ job "groceries" {
         SENTRY_DSN         = "https://b7c94726c8e39af642f012583a6be274@o55858.ingest.us.sentry.io/4508903750434816"
         PORT               = "${NOMAD_PORT_web}"
         URL                = "https://groceries.taiidani.com"
+        LOG_LEVEL          = "info"
+        DB_TYPE            = "postgres"
       }
 
       template {
@@ -40,6 +44,7 @@ job "groceries" {
             REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
+            DATABASE_URL="{{with secret "deploy/groceries"}}{{ .Data.data.DATABASE_URL }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
         env         = true
