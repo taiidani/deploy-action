@@ -2,7 +2,7 @@ variable "artifact" {
   type = string
 }
 
-job "no-time-to-explain" {
+job "no-time-to-explain-refresh" {
   datacenters = ["dc1"]
   type        = "batch"
   node_pool   = "digitalocean"
