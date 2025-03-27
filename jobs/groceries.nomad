@@ -16,7 +16,7 @@ job "groceries" {
   }
 
   group "groceries" {
-    count = 2
+    count = 1
 
     task "app" {
       driver = "exec"
