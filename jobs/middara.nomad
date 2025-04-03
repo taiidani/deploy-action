@@ -40,6 +40,7 @@ job "middara" {
         PORT       = "${NOMAD_PORT_web}"
         PUBLIC_URL = "https://middara.taiidani.com"
         GOMEMLIMIT = "60MiB"
+        DB_TYPE    = "postgres"
       }
 
       template {
@@ -49,6 +50,7 @@ job "middara" {
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
             REDIS_DB=3
+            DATABASE_URL="{{with secret "deploy/middara"}}{{ .Data.data.DATABASE_URL }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
         env         = true
