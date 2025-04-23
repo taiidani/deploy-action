@@ -29,6 +29,11 @@ job "no-time-to-explain-refresh" {
         SENTRY_ENVIRONMENT = "prod"
         SENTRY_DSN         = "https://7fd4c058e6685608ada24d63281f6d59@o55858.ingest.us.sentry.io/4507279390539776"
         DB_TYPE            = "postgres"
+
+        # no-time-to-explain: https://discord.com/channels/372591705754566656/1341142254902837380
+        # bot-stuff: https://discord.com/channels/570720951373922304/651857324658524181
+        # destiny-tweets: https://discord.com/channels/570720951373922304/715987686678200320
+        BLUESKY_FEED_CHANNEL_ID = "1341142254902837380"
       }
 
       template {
