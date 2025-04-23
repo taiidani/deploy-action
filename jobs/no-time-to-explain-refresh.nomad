@@ -44,6 +44,9 @@ job "no-time-to-explain-refresh" {
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
             DATABASE_URL="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DATABASE_URL }}{{end}}"
             BUNGIE_API_KEY="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.BUNGIE_API_KEY }}{{end}}"
+            DISCORD_TOKEN="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_TOKEN }}{{end}}"
+            DISCORD_CLIENT_ID="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_CLIENT_ID }}{{end}}"
+            DISCORD_CLIENT_SECRET="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_CLIENT_SECRET }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
         env         = true
