@@ -8,7 +8,8 @@ job "no-time-to-explain-refresh" {
   node_pool   = "digitalocean"
 
   periodic {
-    crons            = ["@hourly"]
+    # Every 10 minutes
+    crons            = ["*/10 * * * * *"]
     prohibit_overlap = true
   }
 
