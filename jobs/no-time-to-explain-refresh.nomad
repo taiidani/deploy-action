@@ -34,7 +34,7 @@ job "no-time-to-explain-refresh" {
         # no-time-to-explain: https://discord.com/channels/372591705754566656/1341142254902837380
         # bot-stuff: https://discord.com/channels/570720951373922304/651857324658524181
         # destiny-tweets: https://discord.com/channels/570720951373922304/715987686678200320
-        BLUESKY_FEED_CHANNEL_ID = "651857324658524181"
+        BLUESKY_FEED_CHANNEL_ID = "715987686678200320"
       }
 
       template {
