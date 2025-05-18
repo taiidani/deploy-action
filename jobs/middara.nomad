@@ -45,11 +45,8 @@ job "middara" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.private_host }}{{end}}"
-            REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
-            REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
-            REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
-            REDIS_DB=3
+            REDIS_HOST="${NOMAD_IP_redis}"
+            REDIS_PORT="${NOMAD_PORT_redis}"
             DATABASE_URL="{{with secret "deploy/middara"}}{{ .Data.data.DATABASE_URL }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
@@ -85,8 +82,28 @@ job "middara" {
       }
     }
 
+    task "redis" {
+      driver = "docker"
+
+      config {
+        image = "redis:8"
+        args = [
+          "redis-server",
+          "--port", "${NOMAD_PORT_redis}",
+          "--bind", "0.0.0.0"
+        ]
+        ports = ["redis"]
+      }
+
+      resources {
+        cpu    = 25
+        memory = 32
+      }
+    }
+
     network {
       port "web" {}
+      port "redis" {}
     }
 
     vault {
