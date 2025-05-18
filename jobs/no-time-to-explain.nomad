@@ -5,7 +5,7 @@ variable "artifact" {
 job "no-time-to-explain" {
   datacenters = ["dc1"]
   type        = "service"
-  node_pool   = "digitalocean"
+  node_pool   = "home"
 
   update {
     auto_revert = true

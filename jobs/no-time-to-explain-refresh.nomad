@@ -5,7 +5,7 @@ variable "artifact" {
 job "no-time-to-explain-refresh" {
   datacenters = ["dc1"]
   type        = "batch"
-  node_pool   = "digitalocean"
+  node_pool   = "home"
 
   periodic {
     # Every 10 minutes
@@ -39,7 +39,7 @@ job "no-time-to-explain-refresh" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.private_host }}{{end}}"
+            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.host }}{{end}}"
             REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
