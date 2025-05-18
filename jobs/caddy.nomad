@@ -41,6 +41,22 @@ job "caddy" {
   # }
 }
 
+taiidani.com {
+  reverse_proxy {
+    {{- range nomadService "homer" }}
+    to {{ .Address }}:{{ .Port }}
+    {{- end }}
+  }
+}
+
+www.taiidani.com {
+  reverse_proxy {
+    {{- range nomadService "homer" }}
+    to {{ .Address }}:{{ .Port }}
+    {{- end }}
+  }
+}
+
 middara.taiidani.com {
   reverse_proxy {
     {{- range nomadService "middara" }}
@@ -48,6 +64,15 @@ middara.taiidani.com {
     {{- end }}
   }
 }
+
+achievements.taiidani.com {
+  reverse_proxy {
+    {{- range nomadService "achievements" }}
+    to {{ .Address }}:{{ .Port }}
+    {{- end }}
+  }
+}
+
 EOF
         destination = "local/Caddyfile"
       }

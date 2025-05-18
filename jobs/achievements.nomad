@@ -5,7 +5,7 @@ variable "artifact" {
 job "achievements" {
   datacenters = ["dc1"]
   type        = "service"
-  node_pool   = "digitalocean"
+  node_pool   = "home"
 
   update {
     canary            = 1
@@ -45,7 +45,7 @@ job "achievements" {
       template {
         data        = <<EOF
             STEAM_KEY="{{with secret "deploy/achievements"}}{{ .Data.data.STEAM_KEY }}{{end}}"
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.private_host }}{{end}}"
+            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.host }}{{end}}"
             REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
@@ -59,17 +59,6 @@ job "achievements" {
         name     = "achievements"
         provider = "nomad"
         port     = "web"
-        tags = [
-          "traefik.enable=true",
-          "traefik.http.routers.achievements.rule=Host(`achievements.taiidani.com`)",
-          "traefik.http.routers.achievements.middlewares=achievements@nomad",
-          "traefik.http.routers.achievementssecure.rule=Host(`achievements.taiidani.com`)",
-          "traefik.http.routers.achievementssecure.tls=true",
-          "traefik.http.routers.achievementssecure.tls.certresolver=le",
-          "traefik.http.routers.achievementssecure.middlewares=achievements@nomad",
-          "traefik.http.middlewares.achievements.redirectscheme.permanent=true",
-          "traefik.http.middlewares.achievements.redirectscheme.scheme=https",
-        ]
 
         check_restart {
           limit           = 3

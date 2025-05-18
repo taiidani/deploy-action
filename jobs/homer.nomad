@@ -6,7 +6,7 @@ variable "tag" {
 job "homer" {
   datacenters = ["dc1"]
   type        = "service"
-  node_pool   = "digitalocean"
+  node_pool   = "home"
 
   group "homer" {
     update {
@@ -51,17 +51,6 @@ job "homer" {
       name     = "homer"
       provider = "nomad"
       port     = "http"
-      tags = [
-        "traefik.enable=true",
-        "traefik.http.routers.homer.rule=HostRegexp(`^(www.|)taiidani.com$`)",
-        "traefik.http.routers.homer.middlewares=homer@nomad",
-        "traefik.http.routers.homersecure.rule=HostRegexp(`^(www.|)taiidani.com$`)",
-        "traefik.http.routers.homersecure.tls=true",
-        "traefik.http.routers.homersecure.tls.certresolver=le",
-        "traefik.http.routers.homersecure.middlewares=homer@nomad",
-        "traefik.http.middlewares.homer.redirectscheme.permanent=true",
-        "traefik.http.middlewares.homer.redirectscheme.scheme=https",
-      ]
 
       check {
         method   = "GET"
