@@ -34,7 +34,7 @@ job "no-time-to-explain" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.private_host }}{{end}}"
+            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.host }}{{end}}"
             REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
@@ -51,17 +51,6 @@ job "no-time-to-explain" {
         name     = "no-time-to-explain"
         provider = "nomad"
         port     = "web"
-        tags = [
-          "traefik.enable=true",
-          "traefik.http.routers.notimetoexplain.rule=Host(`no-time-to-explain.taiidani.com`)",
-          "traefik.http.routers.notimetoexplain.middlewares=notimetoexplain@nomad",
-          "traefik.http.routers.notimetoexplainsecure.rule=Host(`no-time-to-explain.taiidani.com`)",
-          "traefik.http.routers.notimetoexplainsecure.tls=true",
-          "traefik.http.routers.notimetoexplainsecure.tls.certresolver=le",
-          "traefik.http.routers.notimetoexplainsecure.middlewares=notimetoexplain@nomad",
-          "traefik.http.middlewares.notimetoexplain.redirectscheme.permanent=true",
-          "traefik.http.middlewares.notimetoexplain.redirectscheme.scheme=https",
-        ]
 
         check_restart {
           limit           = 3

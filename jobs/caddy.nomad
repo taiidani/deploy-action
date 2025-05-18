@@ -81,6 +81,14 @@ groceries.taiidani.com {
   }
 }
 
+no-time-to-explain.taiidani.com {
+  reverse_proxy {
+    {{- range nomadService "no-time-to-explain" }}
+    to {{ .Address }}:{{ .Port }}
+    {{- end }}
+  }
+}
+
 EOF
         destination = "local/Caddyfile"
       }
