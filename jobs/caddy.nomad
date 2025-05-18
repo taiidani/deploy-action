@@ -73,6 +73,14 @@ achievements.taiidani.com {
   }
 }
 
+groceries.taiidani.com {
+  reverse_proxy {
+    {{- range nomadService "groceries" }}
+    to {{ .Address }}:{{ .Port }}
+    {{- end }}
+  }
+}
+
 EOF
         destination = "local/Caddyfile"
       }

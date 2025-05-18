@@ -5,7 +5,7 @@ variable "artifact" {
 job "groceries" {
   datacenters = ["dc1"]
   type        = "service"
-  node_pool   = "digitalocean"
+  node_pool   = "home"
 
   update {
     canary            = 1
@@ -40,7 +40,7 @@ job "groceries" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.private_host }}{{end}}"
+            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.host }}{{end}}"
             REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
@@ -54,17 +54,6 @@ job "groceries" {
         name     = "groceries"
         provider = "nomad"
         port     = "web"
-        tags = [
-          "traefik.enable=true",
-          "traefik.http.routers.groceries.rule=Host(`groceries.taiidani.com`)",
-          "traefik.http.routers.groceries.middlewares=groceries@nomad",
-          "traefik.http.routers.groceriessecure.rule=Host(`groceries.taiidani.com`)",
-          "traefik.http.routers.groceriessecure.tls=true",
-          "traefik.http.routers.groceriessecure.tls.certresolver=le",
-          "traefik.http.routers.groceriessecure.middlewares=groceries@nomad",
-          "traefik.http.middlewares.groceries.redirectscheme.permanent=true",
-          "traefik.http.middlewares.groceries.redirectscheme.scheme=https",
-        ]
 
         check_restart {
           limit           = 3
