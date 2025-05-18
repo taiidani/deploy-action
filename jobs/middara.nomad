@@ -5,7 +5,7 @@ variable "artifact" {
 job "middara" {
   datacenters = ["dc1"]
   type        = "service"
-  node_pool   = "digitalocean"
+  node_pool   = "home"
 
   update {
     canary            = 1
@@ -57,17 +57,6 @@ job "middara" {
         name     = "middara"
         provider = "nomad"
         port     = "web"
-        tags = [
-          "traefik.enable=true",
-          "traefik.http.routers.middara.rule=Host(`middara.taiidani.com`)",
-          "traefik.http.routers.middara.middlewares=middara@nomad",
-          "traefik.http.routers.middarasecure.rule=Host(`middara.taiidani.com`)",
-          "traefik.http.routers.middarasecure.tls=true",
-          "traefik.http.routers.middarasecure.tls.certresolver=le",
-          "traefik.http.routers.middarasecure.middlewares=middara@nomad",
-          "traefik.http.middlewares.middara.redirectscheme.permanent=true",
-          "traefik.http.middlewares.middara.redirectscheme.scheme=https",
-        ]
 
         check_restart {
           limit           = 3
