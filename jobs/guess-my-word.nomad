@@ -5,7 +5,7 @@ variable "artifact" {
 job "guess-my-word" {
   datacenters = ["dc1"]
   type        = "service"
-  node_pool   = "digitalocean"
+  node_pool   = "home"
 
   update {
     canary            = 1
@@ -45,7 +45,7 @@ job "guess-my-word" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.private_host }}{{end}}"
+            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.host }}{{end}}"
             REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
             REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
             REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
@@ -59,41 +59,12 @@ job "guess-my-word" {
         name     = "guess-my-word"
         provider = "nomad"
         port     = "web"
-        tags = [
-          "traefik.enable=true",
-          "traefik.http.routers.guess.rule=Host(`guessmyword.xyz`)",
-          "traefik.http.routers.guess.middlewares=guess@nomad",
-          "traefik.http.routers.guesssecure.rule=Host(`guessmyword.xyz`)",
-          "traefik.http.routers.guesssecure.tls=true",
-          "traefik.http.routers.guesssecure.tls.certresolver=le",
-          "traefik.http.routers.guesssecure.middlewares=guess@nomad",
-          "traefik.http.middlewares.guess.redirectscheme.permanent=true",
-          "traefik.http.middlewares.guess.redirectscheme.scheme=https",
-        ]
 
         check_restart {
           limit           = 3
           grace           = "15s"
           ignore_warnings = false
         }
-      }
-
-      service {
-        name     = "guess-my-word-redirect"
-        provider = "nomad"
-        port     = "web"
-        tags = [
-          "traefik.enable=true",
-          "traefik.http.routers.guessredirect.rule=Host(`guess.taiidani.com`)",
-          "traefik.http.routers.guessredirect.middlewares=guessredirect@nomad",
-          "traefik.http.routers.guessredirectsecure.rule=Host(`guess.taiidani.com`)",
-          "traefik.http.routers.guessredirectsecure.tls=true",
-          "traefik.http.routers.guessredirectsecure.tls.certresolver=le",
-          "traefik.http.routers.guessredirectsecure.middlewares=guessredirect@nomad",
-          "traefik.http.middlewares.guessredirect.redirectregex.regex=^http.?://guess.taiidani.com/(.*)",
-          "traefik.http.middlewares.guessredirect.redirectregex.replacement=https://guessmyword.xyz/",
-          "traefik.http.middlewares.guessredirect.redirectregex.permanent=true",
-        ]
       }
 
       resources {

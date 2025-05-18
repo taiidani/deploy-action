@@ -89,6 +89,18 @@ no-time-to-explain.taiidani.com {
   }
 }
 
+guess.taiidani.com {
+  redir https://guessmyword.xyz{uri} permanent
+}
+
+guessmyword.xyz {
+  reverse_proxy {
+    {{- range nomadService "guess-my-word" }}
+    to {{ .Address }}:{{ .Port }}
+    {{- end }}
+  }
+}
+
 EOF
         destination = "local/Caddyfile"
       }
