@@ -41,12 +41,12 @@ job "middara" {
         PUBLIC_URL = "https://middara.taiidani.com"
         GOMEMLIMIT = "60MiB"
         DB_TYPE    = "postgres"
+        REDIS_HOST = "${NOMAD_IP_redis}"
+        REDIS_PORT = "${NOMAD_PORT_redis}"
       }
 
       template {
         data        = <<EOF
-            REDIS_HOST="${NOMAD_IP_redis}"
-            REDIS_PORT="${NOMAD_PORT_redis}"
             DATABASE_URL="{{with secret "deploy/middara"}}{{ .Data.data.DATABASE_URL }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
