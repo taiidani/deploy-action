@@ -89,6 +89,14 @@ no-time-to-explain.taiidani.com {
   }
 }
 
+obsidian.taiidani.com {
+  encode zstd gzip
+  reverse_proxy https://publish.obsidian.md {
+    header_up Host {upstream_hostport}
+  }
+  rewrite * /serve?url=obsidian.taiidani.com{path}
+}
+
 guess.taiidani.com {
   redir https://guessmyword.xyz{uri} permanent
 }
