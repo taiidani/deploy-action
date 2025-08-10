@@ -125,11 +125,17 @@ EOF
       }
     }
 
-    # volume "worker" {
-    #   type      = "host"
-    #   source    = "worker"
-    #   read_only = "false"
-    # }
+    service {
+        name     = "caddy"
+        provider = "nomad"
+        port     = "http"
+
+        check_restart {
+            limit           = 3
+            grace           = "15s"
+            ignore_warnings = false
+        }
+    }
 
     network {
       # mode = "bridge"
