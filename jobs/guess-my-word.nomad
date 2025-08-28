@@ -39,8 +39,9 @@ job "guess-my-word" {
 
       env {
         ADDR     = "0.0.0.0"
-        GIN_MODE = "release"
         ORIGIN   = "guessmyword.xyz"
+        SENTRY_ENVIRONMENT = "prod"
+        SENTRY_DSN = "https://acb76cbf7c2ebaad3c9c8fd7766e59e3@o55858.ingest.us.sentry.io/4509922391490560"
       }
 
       template {
