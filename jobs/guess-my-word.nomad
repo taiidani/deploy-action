@@ -46,8 +46,7 @@ job "guess-my-word" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{range nomadService "redis"}}{{.Address}}{{end}}"
-            REDIS_PORT="{{range nomadService "redis"}}{{.Port}}{{end}}"
+            REDIS_ADDR="{{range nomadService "redis"}}{{.Address}}:{{.Port}}{{end}}"
             REDIS_DB=1
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"
