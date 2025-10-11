@@ -40,10 +40,8 @@ job "groceries" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.host }}{{end}}"
-            REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
-            REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
-            REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
+            REDIS_HOST="{{range nomadService "redis"}}{{.Address}}{{end}}"
+            REDIS_PORT="{{range nomadService "redis"}}{{.Port}}{{end}}"
             DATABASE_URL="{{with secret "deploy/groceries"}}{{ .Data.data.DATABASE_URL }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"

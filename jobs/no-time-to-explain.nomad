@@ -34,10 +34,8 @@ job "no-time-to-explain" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.host }}{{end}}"
-            REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
-            REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
-            REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
+            REDIS_HOST="{{range nomadService "redis"}}{{.Address}}{{end}}"
+            REDIS_PORT="{{range nomadService "redis"}}{{.Port}}{{end}}"
             DISCORD_TOKEN="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_TOKEN }}{{end}}"
             DISCORD_CLIENT_ID="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_CLIENT_ID }}{{end}}"
             DISCORD_CLIENT_SECRET="{{with secret "deploy/no-time-to-explain"}}{{ .Data.data.DISCORD_CLIENT_SECRET }}{{end}}"
