@@ -26,10 +26,8 @@ job "taiidani-bot-testing" {
 
       template {
         data        = <<EOF
-            REDIS_HOST="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.private_host }}{{end}}"
-            REDIS_PORT="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.port }}{{end}}"
-            REDIS_USER="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.user }}{{end}}"
-            REDIS_PASSWORD="{{with secret "credentials/digitalocean/redis"}}{{ .Data.data.password }}{{end}}"
+            REDIS_HOST="{{range nomadService "redis"}}{{.Address}}{{end}}"
+            REDIS_PORT="{{range nomadService "redis"}}{{.Port}}{{end}}"
             DISCORD_TOKEN="{{with secret "deploy/taiidani-bot-testing"}}{{ .Data.data.DISCORD_TOKEN }}{{end}}"
         EOF
         destination = "${NOMAD_SECRETS_DIR}/secrets.env"

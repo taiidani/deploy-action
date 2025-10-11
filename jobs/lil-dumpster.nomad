@@ -21,8 +21,8 @@ job "lil-dumpster" {
       }
 
       env {
-        REDIS_HOST = "${NOMAD_IP_redis}"
-        REDIS_PORT = "${NOMAD_PORT_redis}"
+        REDIS_HOST = "{{range nomadService "redis"}}{{.Address}}{{end}}"
+        REDIS_PORT = "{{range nomadService "redis"}}{{.Port}}{{end}}"
       }
 
       template {
@@ -43,36 +43,6 @@ job "lil-dumpster" {
       type      = "host"
       source    = "hashistack"
       read_only = "false"
-    }
-
-    task "redis" {
-      driver = "docker"
-
-      config {
-        image = "redis:6"
-        args = [
-          "redis-server",
-          "--dir", "/data/lil-dumpster",
-          "--port", "${NOMAD_PORT_redis}",
-          "--bind", "0.0.0.0"
-        ]
-        ports = ["redis"]
-      }
-
-      volume_mount {
-        volume      = "hashistack"
-        destination = "/data"
-        read_only   = "false"
-      }
-
-      resources {
-        cpu    = 25
-        memory = 32
-      }
-    }
-
-    network {
-      port "redis" {}
     }
 
     vault {
