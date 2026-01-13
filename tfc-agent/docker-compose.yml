@@ -1,0 +1,11 @@
+name: tfc-agent
+
+services:
+  agent:
+    image: hashicorp/tfc-agent:latest
+    restart: unless-stopped
+    scale: 2
+    environment:
+      TFC_AGENT_SINGLE: "true"
+      TFC_AGENT_NAME: "digitalocean-rnd"
+      TFC_AGENT_TOKEN: "${TFC_AGENT_TOKEN}"
