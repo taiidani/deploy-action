@@ -58,8 +58,8 @@ jobs:
           jwtGithubAudience: https://github.com/taiidani
           secrets: |
             nomad/creds/deployer secret_id | NOMAD_TOKEN
-            credentials/github TAILSCALE_OAUTH_CLIENT_ID | TS_OAUTH_CLIENT_ID
-            credentials/github TAILSCALE_OAUTH_CLIENT_SECRET | TS_OAUTH_SECRET
+            credentials/data/github TAILSCALE_OAUTH_CLIENT_ID | TS_OAUTH_CLIENT_ID
+            credentials/data/github TAILSCALE_OAUTH_SECRET | TS_OAUTH_SECRET
 
       - name: Tailscale
         uses: tailscale/github-action@v4
