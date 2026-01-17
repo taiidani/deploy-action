@@ -43,7 +43,8 @@ jobs:
       contents: read
       id-token: write # Needed for Vault JWT
     env:
-      NOMAD_ADDR: "http://hashistack.taiidani.com:4646"
+      NOMAD_ADDR: "http://terra:4646"
+      NOMAD_HOST: "terra"
     steps:
       - name: vault
         id: vault
@@ -57,6 +58,17 @@ jobs:
           jwtGithubAudience: https://github.com/taiidani
           secrets: |
             nomad/creds/deployer secret_id | NOMAD_TOKEN
+            credentials/github/data/TAILSCALE_OAUTH_CLIENT_ID | TS_OAUTH_CLIENT_ID
+            credentials/github/data/TAILSCALE_OAUTH_CLIENT_SECRET | TS_OAUTH_SECRET
+
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          version: latest
+          ping: ${{ env.NOMAD_HOST }}
 
       - name: deploy
         uses: taiidani/deploy-action@main
