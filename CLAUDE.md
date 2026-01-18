@@ -48,7 +48,7 @@ variable "artifact" {
 **Common Job Configuration:**
 - `datacenters = ["dc1"]`
 - `type = "service"`
-- `node_pool` is either "home" or "digitalocean"
+- `node_pool` is "home"
 - Update strategy includes canary deployment with auto-promote and auto-revert
 
 **Artifact Fetching:**
@@ -92,9 +92,8 @@ Services discover each other using Nomad's template syntax:
 
 ### Infrastructure Layout
 
-**Two Node Pools:**
+**One Node Pool:**
 1. `home` - Home lab nodes (runs Caddy ingress, most services)
-2. `digitalocean` - Cloud nodes (runs Traefik ingress)
 
 **Ingress Patterns:**
 - `jobs/caddy.nomad` - HTTP ingress for home node pool, uses Caddyfile template with reverse_proxy blocks
@@ -158,7 +157,7 @@ docker compose down
 
 1. Create a new jobspec in `jobs/<service-name>.nomad`
 2. Follow the standard pattern: include `variable "artifact"`, use exec or docker driver, register service with Nomad provider
-3. If ingress is needed, add a reverse_proxy block to `jobs/caddy.nomad` or Traefik tags to the service
+3. If ingress is needed, add a reverse_proxy block to `jobs/caddy.nomad`
 4. Services should set `GOMEMLIMIT` for Go applications to prevent OOM kills
 5. Use canary deployments with auto-promote and auto-revert for safer deployments
 

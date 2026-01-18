@@ -4,3 +4,8 @@ _.file = '.env'
 
 [tools]
 nomad = "1.9.4"
+vault = "latest"
+
+[tasks.render-secrets]
+description = "Render secrets for Docker Compose services using Vault Agent"
+run = "vault agent --config=vault_config.hcl -exit-after-auth"

@@ -1,2 +1,6 @@
+# Rendered secrets (Vault Agent output)
 .env
+!*.env.tmpl
+
+# Service data directories
 data/
