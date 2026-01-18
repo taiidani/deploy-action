@@ -1,0 +1,31 @@
+services:
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    command: redis-server /config/redis.conf
+    networks:
+      - default
+      - backend
+    volumes:
+      - ./data/redis:/opt/data/redis
+      - ./redis.conf:/config/redis.conf:ro
+
+  redisinsight:
+    image: redis/redisinsight:2.70
+    restart: unless-stopped
+    ports:
+      - 5540:5540
+    depends_on:
+      - redis
+    volumes:
+      - ./data/redisinsight:/data
+    environment:
+      RI_REDIS_HOST: redis
+      RI_REDIS_PORT: 6379
+
+networks:
+  backend:
+    external: true
+    name: backend
