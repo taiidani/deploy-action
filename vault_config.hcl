@@ -9,6 +9,11 @@ auto_auth {
 }
 
 template {
+  source      = "gitea/secrets.env.tmpl"
+  destination = "gitea/.env"
+}
+
+template {
   source      = "lil-dumpster/secrets.env.tmpl"
   destination = "lil-dumpster/.env"
 }
