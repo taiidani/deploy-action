@@ -1,0 +1,32 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin
+    restart: "unless-stopped"
+    group_add:
+      - "105"
+    ports:
+      - 8096:8096/tcp
+      - 7359:7359/udp
+    volumes:
+      - ./data/config:/config
+      - ./data/cache:/cache
+      - type: bind
+        source: /mnt/storage/content
+        target: /media
+      - type: bind
+        source: ./data/media2
+        target: /media2
+        read_only: true
+      # Optional - extra fonts to be used during transcoding with subtitle burn-in
+      - type: bind
+        source: ./data/fonts
+        target: /usr/local/share/fonts/custom
+        read_only: true
+    # Optional - alternative address used for autodiscovery
+    # environment:
+    # - JELLYFIN_PublishedServerUrl=http://terra:8096
+    # Optional - may be necessary for docker healthcheck to pass if running in host network mode
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128

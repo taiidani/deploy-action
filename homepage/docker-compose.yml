@@ -1,6 +1,7 @@
 services:
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
+    restart: unless-stopped
     ports:
       - 3005:3000
     volumes:

@@ -1,0 +1,65 @@
+services:
+  radarr:
+    image: ghcr.io/hotio/radarr
+    restart: unless-stopped
+    ports:
+      - "7878:7878"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Etc/UTC
+      - WEBUI_PORTS=7878/tcp
+    volumes:
+      - ./data/radarr:/config
+      - /mnt/storage/content:/data
+      - /mnt/storage/downloads:/downloads
+
+  sonarr:
+    image: ghcr.io/hotio/sonarr
+    restart: unless-stopped
+    ports:
+      - "8989:8989"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Etc/UTC
+      - WEBUI_PORTS=8989/tcp
+    volumes:
+      - ./data/sonarr:/config
+      - /mnt/storage/content:/data
+      - /mnt/storage/downloads:/downloads
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - ./data/qbittorrent:/config
+      - /mnt/storage/downloads:/downloads #optional
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+
+  prowlarr:
+    image: ghcr.io/hotio/prowlarr
+    restart: unless-stopped
+    ports:
+      - "9696:9696"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Etc/UTC
+      - WEBUI_PORTS=9696/tcp
+    volumes:
+      - ./data/prowlarr:/config
