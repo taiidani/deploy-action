@@ -2,8 +2,7 @@ services:
   radarr:
     image: ghcr.io/hotio/radarr
     restart: unless-stopped
-    ports:
-      - "7878:7878"
+    network_mode: service:gluetun
     environment:
       - PUID=1000
       - PGID=1000
@@ -18,8 +17,7 @@ services:
   sonarr:
     image: ghcr.io/hotio/sonarr
     restart: unless-stopped
-    ports:
-      - "8989:8989"
+    network_mode: service:gluetun
     environment:
       - PUID=1000
       - PGID=1000
@@ -36,25 +34,46 @@ services:
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     restart: unless-stopped
+    network_mode: service:gluetun
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
       - WEBUI_PORT=8080
       - TORRENTING_PORT=6881
+      - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
       - ./data/qbittorrent:/config
       - /mnt/storage/downloads:/downloads #optional
+
+  gluetun:
+    image: qmcgaw/gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - VPN_PORT_FORWARDING=on
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
     ports:
+      # All qBittorrent ports
       - 8080:8080
       - 6881:6881
       - 6881:6881/udp
+      # Radarr
+      - "7878:7878"
+      # Sonarr
+      - "8989:8989"
+      # Prowlarr
+      - "9696:9696"
 
   prowlarr:
     image: ghcr.io/hotio/prowlarr
     restart: unless-stopped
-    ports:
-      - "9696:9696"
+    network_mode: service:gluetun
     environment:
       - PUID=1000
       - PGID=1000

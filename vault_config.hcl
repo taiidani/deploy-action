@@ -22,3 +22,8 @@ template {
   source      = "tfc-agent/secrets.env.tmpl"
   destination = "tfc-agent/.env"
 }
+
+template {
+  source      = "servarr/secrets.env.tmpl"
+  destination = "servarr/.env"
+}
