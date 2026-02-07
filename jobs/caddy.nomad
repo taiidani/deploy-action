@@ -57,22 +57,6 @@ www.taiidani.com {
   }
 }
 
-middara.taiidani.com {
-  reverse_proxy {
-    {{- range nomadService "middara" }}
-    to {{ .Address }}:{{ .Port }}
-    {{- end }}
-  }
-}
-
-achievements.taiidani.com {
-  reverse_proxy {
-    {{- range nomadService "achievements" }}
-    to {{ .Address }}:{{ .Port }}
-    {{- end }}
-  }
-}
-
 groceries.taiidani.com {
   reverse_proxy {
     {{- range nomadService "groceries" }}
@@ -103,9 +87,7 @@ guess.taiidani.com {
 
 guessmyword.xyz {
   reverse_proxy {
-    {{- range nomadService "guess-my-word" }}
-    to {{ .Address }}:{{ .Port }}
-    {{- end }}
+    to 192.168.102.5:3500
   }
 }
 
