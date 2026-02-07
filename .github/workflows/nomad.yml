@@ -22,7 +22,7 @@ on:
         required: true
         type: string
       jobspec:
-        required: true
+        required: false
         type: string
       environment:
         required: false
@@ -43,8 +43,7 @@ jobs:
       contents: read
       id-token: write # Needed for Vault JWT
     env:
-      NOMAD_ADDR: "http://terra:4646"
-      NOMAD_HOST: "terra"
+      DEPLOY_HOST: "terra"
     steps:
       - name: vault
         id: vault
@@ -57,7 +56,6 @@ jobs:
           namespace: admin
           jwtGithubAudience: https://github.com/taiidani
           secrets: |
-            nomad/creds/deployer secret_id | NOMAD_TOKEN;
             credentials/data/github TAILSCALE_OAUTH_CLIENT_ID | TS_OAUTH_CLIENT_ID;
             credentials/data/github TAILSCALE_OAUTH_SECRET | TS_OAUTH_SECRET;
 
@@ -68,12 +66,10 @@ jobs:
           oauth-secret: ${{ steps.vault.outputs.TS_OAUTH_SECRET }}
           tags: tag:ci
           version: latest
-          ping: ${{ env.NOMAD_HOST }}
+          ping: ${{ env.DEPLOY_HOST }}
 
       - name: deploy
         uses: taiidani/deploy-action@main
-        env:
-          NOMAD_TOKEN: ${{ steps.vault.outputs.NOMAD_TOKEN }}
         with:
           artifact: ${{ inputs.artifact }}
           jobspec: ${{ inputs.jobspec }}

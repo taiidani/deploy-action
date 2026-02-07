@@ -6,7 +6,7 @@ inputs:
     required: true
     description: "The artifact identifier, such as a downloadable binary or Docker image name"
   jobspec:
-    required: true
+    required: false
     description: "The path to the jobspec to be rendered"
 runs:
   using: "composite"
@@ -22,12 +22,12 @@ runs:
         cache: true
         working_directory: ${{ github.action_path }}
 
-    - name: validate
-      shell: bash
-      working-directory: "${{ github.action_path }}/jobs"
-      run: nomad job validate -var 'artifact=${{ inputs.artifact }}' ${{ inputs.jobspec }}
+    # - name: validate
+    #   shell: bash
+    #   working-directory: "${{ github.action_path }}/jobs"
+    #   run: nomad job validate -var 'artifact=${{ inputs.artifact }}' ${{ inputs.jobspec }}
 
-    - name: apply
-      shell: bash
-      working-directory: "${{ github.action_path }}/jobs"
-      run: nomad job run -var 'artifact=${{ inputs.artifact }}' ${{ inputs.jobspec }}
+    # - name: apply
+    #   shell: bash
+    #   working-directory: "${{ github.action_path }}/jobs"
+    #   run: nomad job run -var 'artifact=${{ inputs.artifact }}' ${{ inputs.jobspec }}
