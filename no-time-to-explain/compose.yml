@@ -1,0 +1,29 @@
+name: no-time-to-explain
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - 3502:3000
+    environment:
+      SENTRY_ENVIRONMENT: "prod"
+      SENTRY_DSN: "https://7fd4c058e6685608ada24d63281f6d59@o55858.ingest.us.sentry.io/4507279390539776"
+      CMD_TZ: "EDT"
+      PORT: "3000"
+      URL: "https://no-time-to-explain.taiidani.com"
+      DB_TYPE: "postgres"
+      REDIS_HOST: redis.no-time-to-explain_default
+      REDIS_PORT: "6379"
+      DATABASE_URL: "${DATABASE_URL}"
+      DISCORD_TOKEN: "${DISCORD_TOKEN}"
+      DISCORD_CLIENT_ID: "${DISCORD_CLIENT_ID}"
+      DISCORD_CLIENT_SECRET: "${DISCORD_CLIENT_SECRET}"
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    volumes:
+      - ./data/redis:/data

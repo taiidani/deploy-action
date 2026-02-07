@@ -24,6 +24,11 @@ template {
 }
 
 template {
+  source      = "no-time-to-explain/secrets.env.tmpl"
+  destination = "no-time-to-explain/.env"
+}
+
+template {
   source      = "tfc-agent/secrets.env.tmpl"
   destination = "tfc-agent/.env"
 }
