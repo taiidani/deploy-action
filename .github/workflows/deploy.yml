@@ -1,4 +1,4 @@
-name: deploy-compose
+name: deploy
 
 on:
   workflow_call:
@@ -8,9 +8,9 @@ on:
         type: string
         description: "Service directory name (e.g., 'groceries', 'no-time-to-explain')"
       artifact:
-        required: false
+        required: true
         type: string
-        description: "Optional artifact URL (passed as ARTIFACT build arg)"
+        description: "Artifact URL (passed as ARTIFACT build arg)"
       environment:
         required: false
         type: string
@@ -25,9 +25,9 @@ on:
         type: string
         description: "Service directory name"
       artifact:
-        required: false
+        required: true
         type: string
-        description: "Optional artifact URL"
+        description: "Artifact URL"
       environment:
         required: false
         type: string
@@ -53,7 +53,7 @@ jobs:
       DEPLOY_USER: "rnixon"
       DEPLOY_PATH: "/mnt/services"
     steps:
-      - name: vault
+      - name: Vault
         id: vault
         uses: hashicorp/vault-action@v3
         with:
@@ -85,34 +85,6 @@ jobs:
           ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy
-        env:
-          ARTIFACT_URL: ${{ inputs.artifact }}
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
-            set -e
-            cd ${{ env.DEPLOY_PATH }}
-
-            # Pull latest changes
-            git pull origin main
-
-            # Render secrets if needed
-            mise run render-secrets
-
-            # Navigate to service directory
-            cd ${{ inputs.service }}
-
-            # Deploy with artifact URL as build arg if provided
-            if [ -n "$ARTIFACT_URL" ]; then
-              echo "Deploying with artifact: $ARTIFACT_URL"
-              ARTIFACT="$ARTIFACT_URL" docker compose up -d --build --wait
-            else
-              echo "Deploying without artifact"
-              docker compose up -d --build --wait
-            fi
-
-            # Show status
-            docker compose ps
-            echo ""
-            echo "Recent logs:"
-            docker compose logs --tail=30
-          EOF
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+            "cd ${{ env.DEPLOY_PATH }} && mise run deploy ${{ inputs.service }} '${{ inputs.artifact }}'"

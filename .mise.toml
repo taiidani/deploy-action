@@ -11,3 +11,32 @@ vault = "latest"
 [tasks.render-secrets]
 description = "Render secrets for Docker Compose services using Vault Agent"
 run = "vault agent --config=vault_config.hcl -exit-after-auth"
+
+[tasks.deploy]
+description = "Deploy a service with optional artifact"
+run = """
+#!/usr/bin/env bash
+set -e
+
+SERVICE="${1:?Service name required}"
+ARTIFACT="${2:-}"
+
+echo "🚀 Deploying service: $SERVICE"
+
+# Navigate to service directory
+cd "$SERVICE"
+
+# Deploy with or without artifact
+if [ -n "$ARTIFACT" ]; then
+  echo "📦 Deploying with artifact: $ARTIFACT"
+  ARTIFACT="$ARTIFACT" docker compose up -d --build --wait
+else
+  echo "📦 Deploying without artifact..."
+  docker compose up -d --build --wait
+fi
+
+# Show status
+echo ""
+echo "✅ Deployment complete!"
+docker compose ps
+"""

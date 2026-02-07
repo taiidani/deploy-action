@@ -121,6 +121,42 @@ Services discover each other using Docker's internal DNS:
 
 ## Development Commands
 
+### Mise Tasks
+
+All deployment logic is defined in `.mise.toml` for consistency between CI/CD and local development.
+
+**Deploy a service:**
+```bash
+# Deploy with latest artifact (uses Dockerfile default)
+mise run deploy <service-name>
+
+# Deploy with specific artifact
+mise run deploy <service-name> https://example.com/artifact.gz
+```
+
+This task handles the full deployment:
+- Pulls latest git changes
+- Renders secrets with Vault Agent
+- Deploys with `docker compose up -d --build --wait`
+- Shows status and logs
+
+**Note:** When no artifact is specified, the Dockerfile's default `ARG` points to the "latest" uploaded artifact for that service.
+
+**Render secrets:**
+```bash
+mise run render-secrets
+```
+
+This will:
+1. Read templates from `<service>/secrets.env.tmpl`
+2. Fetch secrets from Vault
+3. Write rendered `.env` files to each service directory
+
+**Available Mise tasks:**
+```bash
+mise tasks  # List all available tasks
+```
+
 ### Working with Services Locally
 
 Start a service:
@@ -155,16 +191,6 @@ docker compose up -d --build
 ```
 
 ### Secrets Management
-
-Render all secrets from Vault:
-```bash
-mise run render-secrets
-```
-
-This will:
-1. Read templates from `<service>/secrets.env.tmpl`
-2. Fetch secrets from Vault
-3. Write rendered `.env` files to each service directory
 
 Add a new service to secrets rendering:
 1. Create `<service>/secrets.env.tmpl` with Vault secret paths
@@ -260,48 +286,47 @@ docker compose logs -f
 
 **CI/CD Deployment (from GitHub Actions):**
 
-Use the reusable workflow to deploy from your service repositories:
+Use the reusable workflow to deploy from your service repositories. The workflow requires an artifact URL:
 
-1. **For services without artifacts** (using pre-built images):
-   ```yaml
-   jobs:
-     deploy:
-       uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
-       with:
-         service: "my-service"  # Directory name in /mnt/services
-   ```
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - run: go build -o my-binary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary
+          path: my-binary
 
-2. **For services with binary artifacts**:
-   ```yaml
-   jobs:
-     build:
-       # ... build your binary ...
-       
-     publish:
-       needs: build
-       uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
-       with:
-         artifact-name: "my-binary"
-         filename: "my-binary"
-     
-     deploy:
-       needs: publish
-       uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
-       with:
-         service: "my-service"
-         artifact: ${{ needs.publish.outputs.artifact }}
-   ```
+  publish:
+    needs: build
+    uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
+    with:
+      artifact-name: "binary"
+      filename: "my-binary"
+  
+  deploy:
+    needs: publish
+    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
+    with:
+      service: "my-service"
+      artifact: ${{ needs.publish.outputs.artifact }}
+```
 
 **How CI/CD Deployment Works:**
 1. GitHub Actions connects to home lab via Tailscale
 2. SSH into terra at `/mnt/services`
-3. Pull latest compose configurations: `git pull origin main`
-4. Render secrets: `mise run render-secrets`
-5. Navigate to service directory
-6. Deploy with rebuild: `docker compose up -d --build --wait`
-   - If artifact URL provided, it's passed as `ARTIFACT` build arg
-   - Dockerfile `ADD` directives download and extract artifacts
-7. Show status and recent logs
+3. Runs: `mise run deploy <service> <artifact-url>`
+4. The Mise task handles:
+   - Pulling latest configurations from git
+   - Rendering secrets with Vault Agent
+   - Running `docker compose up -d --build --wait`
+   - Showing deployment status and logs
 
 ### Volume Mounts
 
@@ -324,19 +349,18 @@ Caddy stores certificates and configuration in:
 ### Reusable Workflows
 
 **`.github/workflows/deploy.yml`** - Docker Compose deployment:
+- Requires an artifact URL as input
 - Connects to home lab via Tailscale and SSH
-- Pulls latest configurations from git
-- Renders secrets with Vault Agent
-- Deploys with `docker compose up -d --build --wait`
-- Optionally passes artifact URL as `ARTIFACT` build arg
-- Dockerfile `ADD` directives handle artifact downloads
-- Shows deployment status and recent logs
+- Executes: `mise run deploy <service> <artifact-url>`
+- Deployment logic is in `.mise.toml` for consistency
+- Can be run locally with the same command
 
 **`.github/workflows/publish-binary.yml`** - Binary publishing:
 - Downloads artifacts from GitHub Actions
 - Uploads to DigitalOcean Spaces (S3-compatible) at `rnd-public.sfo3.digitaloceanspaces.com`
-- Returns public URL for the artifact
-- Used in conjunction with deploy-with-artifact.yml
+- Uploads twice: once with the full filename, once as "latest.tgz"
+- The "latest.tgz" copy enables local development without specifying artifact URL
+- Returns public URL for the specific artifact (not "latest.tgz")
 - Requires Vault credentials for DigitalOcean Spaces access
 
 ### Required Secrets in Vault
@@ -346,23 +370,7 @@ For the deployment workflows to function, these secrets must be in Vault:
 - `credentials/data/github` - `DEPLOY_SSH_KEY` (SSH private key for terra host)
 - `credentials/data/digitalocean/spaces` - `spaces_access_id` and `spaces_secret_key` (for binary publishing)
 
-### Example: Service Repository Workflows
-
-**Simple deployment (pre-built image):**
-```yaml
-name: Deploy
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
-    with:
-      service: "my-service"
-```
-
-**Deployment with binary artifact:**
+### Example: Service Repository Workflow
 ```yaml
 name: Deploy
 on:
@@ -398,14 +406,31 @@ jobs:
       artifact: ${{ needs.publish.outputs.artifact }}
 ```
 
-**In your Dockerfile, use the ARTIFACT build arg:**
+**In your Dockerfile, use the ARTIFACT build arg with a default:**
 ```dockerfile
-ARG ARTIFACT
-ADD ${ARTIFACT} /app/groceries
-RUN chmod +x /app/groceries
+FROM scratch
+ARG ARTIFACT=https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/my-service/latest.tgz
+ADD --unpack ${ARTIFACT} /app/
+CMD ["/app/my-service"]
 ```
 
-Docker's `ADD` directive will automatically download from URLs and extract gzipped files.
+**In your compose.yml, pass the ARTIFACT as a build arg:**
+```yaml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTIFACT: ${ARTIFACT}
+```
+
+**Key points:**
+- `ARG ARTIFACT=...` in Dockerfile provides a default to the most recent upload ("latest.tgz")
+- `args: ARTIFACT: ${ARTIFACT}` in compose.yml passes the environment variable to the build
+- `ADD --unpack` automatically downloads and extracts gzipped tarballs
+- CI/CD always passes the specific artifact URL via environment variable
+- Local development without `ARTIFACT` env var uses "latest.tgz" by default
 
 ## Archived Components
 

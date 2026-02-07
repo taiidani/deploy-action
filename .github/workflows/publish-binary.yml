@@ -50,8 +50,16 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ steps.vault.outputs.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ steps.vault.outputs.AWS_SECRET_ACCESS_KEY }}
         run: |
+          # Upload with full filename
           aws s3 cp \
             --endpoint=https://sfo3.digitaloceanspaces.com \
             --acl public-read \
               ./${{ inputs.filename }} s3://rnd-public/${{ github.repository }}/${{ inputs.filename }}
+
+          # Also upload as "latest.tgz" for local development convenience
+          aws s3 cp \
+            --endpoint=https://sfo3.digitaloceanspaces.com \
+            --acl public-read \
+              ./${{ inputs.filename }} s3://rnd-public/${{ github.repository }}/latest.tgz
+
           echo "artifact=${{ env.BUCKET_URL }}/${{ inputs.filename }}" >> "$GITHUB_OUTPUT"

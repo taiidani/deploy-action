@@ -11,33 +11,11 @@ This document explains how to deploy services from their individual repositories
 - Docker handles artifact downloads via Dockerfile `ADD` directives
 
 **The Flow:**
-Service repo → Build artifact → Upload to S3 → Trigger deployment → SSH to terra → Docker downloads artifact during build → Service restarts
+Service repo → Build artifact → Upload to S3 → Trigger deployment → SSH to terra → Mise deploys service → Docker downloads artifact during build → Service restarts
 
-## Single Deployment Workflow
+## Deployment Workflow
 
-There's one workflow that handles both simple and artifact-based deployments:
-
-### Option 1: Simple Deployment (Pre-built Images)
-
-For services using Docker Hub images or building from source:
-
-```yaml
-name: Deploy
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
-    with:
-      service: "my-service"  # Must match directory in /mnt/services
-```
-
-### Option 2: Deployment with Binary Artifact
-
-For Go services that build a binary and embed it in Docker:
+The deployment workflow requires an artifact URL. Here's the standard pattern for Go services:
 
 ```yaml
 name: Deploy
@@ -78,32 +56,43 @@ jobs:
 
 ## How Artifact Downloads Work
 
-The workflow passes the artifact URL as the `ARTIFACT` build argument to Docker Compose. Your Dockerfile uses Docker's `ADD` directive to download it:
+The workflow passes the artifact URL as the `ARTIFACT` build argument to Docker Compose. Your Dockerfile uses Docker's `ADD` directive with a default value:
 
 ```dockerfile
-ARG ARTIFACT
-ADD ${ARTIFACT} /app/my-service
-RUN chmod +x /app/my-service
+FROM scratch
+ARG ARTIFACT=https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/my-service/latest
+ADD --unpack ${ARTIFACT} /app/
+CMD ["/app/my-service"]
 ```
 
-**Docker's ADD directive automatically:**
-- Downloads from URLs
-- Extracts gzipped files
-- No manual curl/gunzip needed!
+**How this works:**
+- CI/CD always passes the specific artifact URL (e.g., `my-service-2024.01.15.tgz`)
+- Local development omits the artifact arg, so Docker uses the default "latest.tgz"
+- The publish workflow uploads both the versioned file AND a "latest.tgz" copy
+- `ADD --unpack` automatically downloads and extracts gzipped tarballs
 
 ## What Happens During Deployment
 
 When the workflow runs:
 
 1. **Connect**: Tailscale + SSH to terra
-2. **Update**: `cd /mnt/services && git pull origin main`
-3. **Secrets**: `mise run render-secrets`
-4. **Navigate**: `cd my-service`
-5. **Deploy**: `ARTIFACT=<url> docker compose up -d --build --wait`
-6. **Verify**: Show status and logs
+2. **Execute**: `cd /mnt/services && mise run deploy <service> <artifact-url>`
 
-The `--build` flag ensures Docker rebuilds with the new artifact URL.
-The `--wait` flag waits for services to be healthy before returning.
+The Mise task handles:
+- Pulling latest configurations from git
+- Rendering secrets with Vault Agent
+- Building/starting the service with Docker Compose
+- Showing deployment status and logs
+
+**You can run the same command locally:**
+```bash
+# On terra or locally with the repo
+cd /mnt/services
+mise run deploy groceries
+mise run deploy groceries https://example.com/binary.gz
+```
+
+This approach means the deployment logic lives in `.mise.toml`, not scattered across GitHub Actions.
 
 ## Service Setup in /mnt/services
 
@@ -118,16 +107,20 @@ For a service to be deployable:
        └── secrets.env.tmpl (if using Vault secrets)
    ```
 
-2. **Dockerfile that accepts ARTIFACT arg:**
+2. **Dockerfile that accepts ARTIFACT arg with default:**
    ```dockerfile
-   FROM golang:1.21 AS builder
-   # Download pre-built artifact
-   ARG ARTIFACT
-   ADD ${ARTIFACT} /app/my-service
-   RUN chmod +x /app/my-service
+   FROM scratch
+   ARG ARTIFACT=https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/my-service/latest.tgz
+   ADD --unpack ${ARTIFACT} /app/
+   CMD ["/app/my-service"]
+   ```
    
-   FROM debian:bookworm-slim
-   COPY --from=builder /app/my-service /app/my-service
+   Or with Alpine for CA certificates:
+   ```dockerfile
+   FROM alpine:latest
+   RUN apk --no-cache add ca-certificates
+   ARG ARTIFACT=https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/my-service/latest.tgz
+   ADD --unpack ${ARTIFACT} /app/
    CMD ["/app/my-service"]
    ```
 
@@ -138,12 +131,16 @@ For a service to be deployable:
        build:
          context: .
          dockerfile: Dockerfile
+         args:
+           ARTIFACT: ${ARTIFACT}
        restart: unless-stopped
        ports:
          - 3000:3000
        environment:
          DATABASE_URL: "${DATABASE_URL}"
    ```
+   
+   The `args: ARTIFACT: ${ARTIFACT}` passes the environment variable to the Dockerfile's `ARG`.
 
 4. **Vault secrets (if needed):**
    - Add secrets to Vault at `deploy/my-service`
@@ -202,8 +199,22 @@ vault kv put credentials/digitalocean/spaces \
 
 ## Tips
 
-**Testing Locally:**
-You can test the deployment on terra manually:
+**Testing Deployments Locally:**
+Use the same Mise task that GitHub Actions uses:
+```bash
+cd /mnt/services
+
+# Deploy with latest artifact (Dockerfile default)
+mise run deploy my-service
+
+# Deploy with specific artifact
+mise run deploy my-service https://example.com/my-binary.gz
+```
+
+The first command (without artifact URL) uses the Dockerfile's default `ARG`, which points to the "latest" uploaded artifact.
+
+**Manual Docker Compose:**
+You can also work with Docker Compose directly:
 ```bash
 cd /mnt/services/my-service
 ARTIFACT=https://example.com/my-binary docker compose up -d --build --wait
@@ -211,10 +222,11 @@ docker compose logs -f
 ```
 
 **Dockerfile Best Practices:**
-- Use multi-stage builds to keep final image small
-- Use `ARG` before using variables in Dockerfile
-- Docker ADD automatically handles .gz files (extracts them)
-- For non-gzipped files, use ADD as-is
+- Use `ARG ARTIFACT=...` with a default pointing to "latest.tgz"
+- Use `ADD --unpack` for automatic download and extraction
+- Use `FROM scratch` for minimal image size (Go binaries)
+- Use `FROM alpine:latest` if you need CA certificates
+- The "latest.tgz" artifact is updated by the publish workflow on every push
 
 **Workflow Concurrency:**
 - Deployments use `concurrency: group: deploy-${{ service }}` 

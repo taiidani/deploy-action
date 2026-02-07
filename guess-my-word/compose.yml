@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        ARTIFACT: ${ARTIFACT}
     restart: unless-stopped
     command: ["/app/guess-my-word", "--port=3000"]
     ports:
