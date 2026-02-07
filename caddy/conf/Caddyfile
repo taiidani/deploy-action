@@ -1,0 +1,59 @@
+# Docs: https://caddyserver.com/docs/caddyfile
+{
+  # Global Options Docs: https://caddyserver.com/docs/caddyfile/options
+
+  storage file_system /data/caddy
+
+  email rnixon@taiidani.com
+  # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+
+  # log {
+  #   output stdout
+  # }
+}
+
+# taiidani.com {
+#   reverse_proxy {
+#     {{- range nomadService "homer" }}
+#     to {{ .Address }}:{{ .Port }}
+#     {{- end }}
+#   }
+# }
+
+# www.taiidani.com {
+#   reverse_proxy {
+#     {{- range nomadService "homer" }}
+#     to {{ .Address }}:{{ .Port }}
+#     {{- end }}
+#   }
+# }
+
+groceries.taiidani.com {
+  reverse_proxy {
+    to 192.168.102.5:3501
+  }
+}
+
+no-time-to-explain.taiidani.com {
+  reverse_proxy {
+    to 192.168.102.5:3502
+  }
+}
+
+obsidian.taiidani.com {
+  encode zstd gzip
+  reverse_proxy https://publish.obsidian.md {
+    header_up Host {upstream_hostport}
+  }
+  rewrite * /serve?url=obsidian.taiidani.com{path}
+}
+
+guess.taiidani.com {
+  redir https://guessmyword.xyz{uri} permanent
+}
+
+guessmyword.xyz {
+  reverse_proxy {
+    to 192.168.102.5:3500
+  }
+}
