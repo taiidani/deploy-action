@@ -1,0 +1,118 @@
+name: deploy-compose
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        required: true
+        type: string
+        description: "Service directory name (e.g., 'groceries', 'no-time-to-explain')"
+      artifact:
+        required: false
+        type: string
+        description: "Optional artifact URL (passed as ARTIFACT build arg)"
+      environment:
+        required: false
+        type: string
+        default: "production"
+      url:
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      service:
+        required: true
+        type: string
+        description: "Service directory name"
+      artifact:
+        required: false
+        type: string
+        description: "Optional artifact URL"
+      environment:
+        required: false
+        type: string
+        default: "production"
+      url:
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.url }}
+    concurrency:
+      group: deploy-${{ inputs.service }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DEPLOY_HOST: "terra"
+      DEPLOY_USER: "rnixon"
+      DEPLOY_PATH: "/mnt/services"
+    steps:
+      - name: vault
+        id: vault
+        uses: hashicorp/vault-action@v3
+        with:
+          url: https://rnd.vault.0846e66f-a975-4a88-9e46-6dc6267e9b73.aws.hashicorp.cloud:8200
+          role: github-role
+          method: jwt
+          path: github
+          namespace: admin
+          jwtGithubAudience: https://github.com/taiidani
+          secrets: |
+            credentials/data/github TAILSCALE_OAUTH_CLIENT_ID | TS_OAUTH_CLIENT_ID;
+            credentials/data/github TAILSCALE_OAUTH_SECRET | TS_OAUTH_SECRET;
+            credentials/data/github DEPLOY_SSH_KEY | DEPLOY_SSH_KEY;
+
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ steps.vault.outputs.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ steps.vault.outputs.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          version: latest
+          ping: ${{ env.DEPLOY_HOST }}
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ steps.vault.outputs.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          ARTIFACT_URL: ${{ inputs.artifact }}
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            set -e
+            cd ${{ env.DEPLOY_PATH }}
+
+            # Pull latest changes
+            git pull origin main
+
+            # Render secrets if needed
+            mise run render-secrets
+
+            # Navigate to service directory
+            cd ${{ inputs.service }}
+
+            # Deploy with artifact URL as build arg if provided
+            if [ -n "$ARTIFACT_URL" ]; then
+              echo "Deploying with artifact: $ARTIFACT_URL"
+              ARTIFACT="$ARTIFACT_URL" docker compose up -d --build --wait
+            else
+              echo "Deploying without artifact"
+              docker compose up -d --build --wait
+            fi
+
+            # Show status
+            docker compose ps
+            echo ""
+            echo "Recent logs:"
+            docker compose logs --tail=30
+          EOF

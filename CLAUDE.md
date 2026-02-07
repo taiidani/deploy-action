@@ -4,136 +4,124 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This repository contains deployment tooling for taiidani's home lab. It provides:
-1. A GitHub Action (`action.yml`) for standardized Nomad deployments
-2. Reusable GitHub workflows for publishing binaries and deploying to Nomad
-3. Nomad jobspecs for various services
-4. Docker Compose configurations for select services
+This repository contains deployment configurations for taiidani's home lab. All services run using Docker Compose on a single home lab host. The repository provides:
+1. Docker Compose configurations for all services
+2. Vault Agent integration for secrets management
+3. Caddy reverse proxy for HTTP ingress
+4. GitHub Actions workflows for CI/CD deployments
+5. Binary publishing workflow for DigitalOcean Spaces
 
 ## Architecture
 
-### GitHub Action Integration
+### Docker Compose Services
 
-The core GitHub Action (`action.yml`) performs these steps:
-1. Creates a `.env` file for environment variables (NOMAD_TOKEN must be set in environment)
-2. Uses mise-action to install Nomad CLI (version specified in `.mise.toml`)
-3. Validates the jobspec with `nomad job validate -var 'artifact=...' <jobspec>`
-4. Deploys with `nomad job run -var 'artifact=...' <jobspec>`
+Each service has its own directory containing a `compose.yml` or `docker-compose.yml` file. Services are deployed and managed independently on the home lab host (terra).
 
-### Reusable Workflows
+**Active Services:**
+- `beszel/` - System monitoring service
+- `caddy/` - HTTP reverse proxy and ingress
+- `gitea/` - Self-hosted Git service
+- `groceries/` - Grocery list web app with Redis
+- `guess-my-word/` - Word guessing game
+- `homepage/` - Dashboard homepage
+- `lil-dumpster/` - Discord bot with Redis
+- `no-time-to-explain/` - Destiny 2 Discord bot with Redis
+- `plex/` - Media server
+- `redis/` - Standalone Redis instance
+- `servarr/` - Media management stack (Sonarr, Radarr, etc.)
+- `tfc-agent/` - Terraform Cloud agents (scaled to 2 replicas)
 
-**`.github/workflows/nomad.yml`** - Main deployment workflow:
-- Uses Vault JWT authentication to retrieve secrets
-- Connects to Nomad via Tailscale (requires TS_OAUTH_CLIENT_ID and TS_OAUTH_SECRET)
-- Nomad cluster address: `http://terra:4646`
-- Calls the deploy-action with artifact URL and jobspec path
+### Secrets Management with Vault
 
-**`.github/workflows/publish-binary.yml`** - Binary publishing:
-- Downloads artifacts from GitHub Actions
-- Uploads to DigitalOcean Spaces (S3-compatible) at `rnd-public.sfo3.digitaloceanspaces.com`
-- Returns public URL for the artifact
-- Requires Vault credentials for DigitalOcean Spaces access
+Secrets are managed using HashiCorp Vault Agent, which renders `.env` files from templates.
 
-### Nomad Jobspec Patterns
+**Configuration:**
+- Vault URL: `https://rnd.vault.0846e66f-a975-4a88-9e46-6dc6267e9b73.aws.hashicorp.cloud:8200`
+- Namespace: `admin`
+- Authentication: Token file at `/home/rnixon/.vault-token`
 
-All jobspecs in `jobs/` follow a consistent pattern:
+**Template Pattern:**
+Each service with secrets has:
+1. A template file: `<service>/secrets.env.tmpl`
+2. A rendered output: `<service>/.env` (gitignored)
+3. Configuration in `vault_config.hcl`
 
-**Variable Declaration:**
-```hcl
-variable "artifact" {
-  type = string
+**Render secrets for all services:**
+```bash
+mise run render-secrets
+```
+
+This runs `vault agent --config=vault_config.hcl -exit-after-auth` to populate all `.env` files.
+
+**Template Example (`<service>/secrets.env.tmpl`):**
+```
+DATABASE_URL="{{with secret "deploy/service-name"}}{{ .Data.data.DATABASE_URL }}{{end}}"
+API_KEY="{{with secret "deploy/service-name"}}{{ .Data.data.API_KEY }}{{end}}"
+```
+
+### Ingress with Caddy
+
+HTTP ingress is handled by Caddy in `caddy/compose.yml`. The Caddyfile is located at `caddy/conf/Caddyfile`.
+
+**Caddy Configuration:**
+- Ports: 80, 443 (TCP and UDP for HTTP/3)
+- Volumes: `./conf` mounted to `/etc/caddy/`, persistent data in `./data/`
+- ACME email: `rnixon@taiidani.com`
+- Storage: File system at `/data/caddy`
+
+**Routing Pattern:**
+Services are accessed via subdomains and reverse proxied to internal ports:
+```
+groceries.taiidani.com {
+  reverse_proxy {
+    to 192.168.102.5:3501
+  }
 }
 ```
 
-**Common Job Configuration:**
-- `datacenters = ["dc1"]`
-- `type = "service"`
-- `node_pool` is "home"
-- Update strategy includes canary deployment with auto-promote and auto-revert
+Common service ports:
+- `guess-my-word`: 3500
+- `groceries`: 3501
+- `no-time-to-explain`: 3502
 
-**Artifact Fetching:**
-```hcl
-artifact {
-  source = var.artifact
-}
+### Service Patterns
+
+**Web Applications with Dependencies:**
+Services like `groceries/` and `no-time-to-explain/` include their own Redis instances:
+```yaml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - 3501:3000
+    environment:
+      REDIS_HOST: redis.groceries_default
+      REDIS_PORT: "6379"
+      DATABASE_URL: "${DATABASE_URL}"
+      
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    volumes:
+      - ./data/redis:/data
 ```
 
 **Service Discovery:**
-Services register with Nomad's service catalog using:
-```hcl
-service {
-  name     = "service-name"
-  provider = "nomad"
-  port     = "web"
-}
-```
+Services discover each other using Docker's internal DNS:
+- Format: `<service>.<project>_default` (e.g., `redis.groceries_default`)
+- External services use static IPs (e.g., `192.168.102.5`)
 
-**Vault Integration:**
-Jobspecs use Vault templates to inject secrets:
-```hcl
-vault {
-  role = "nomad-cluster"
-}
-
-template {
-  data        = <<EOF
-KEY="{{with secret "path"}}{{ .Data.data.KEY }}{{end}}"
-EOF
-  destination = "${NOMAD_SECRETS_DIR}/secrets.env"
-  env         = true
-}
-```
-
-**Service Discovery in Templates:**
-Services discover each other using Nomad's template syntax:
-```hcl
-{{range nomadService "service-name"}}{{.Address}}:{{.Port}}{{end}}
-```
-
-### Infrastructure Layout
-
-**One Node Pool:**
-1. `home` - Home lab nodes (runs Caddy ingress, most services)
-
-**Ingress Patterns:**
-- `jobs/caddy.nomad` - HTTP ingress for home node pool, uses Caddyfile template with reverse_proxy blocks
-- `jobs/ingress.nomad` - Traefik ingress for digitalocean node pool, uses dynamic configuration from Nomad provider
-
-**Docker Compose Services:**
-Located in subdirectories, these run outside Nomad:
-- `lil-dumpster/` - Discord bot with Redis
-- `beszel/` - Monitoring service
-- `tfc-agent/` - Terraform Cloud agents (scaled to 2 instances)
+**Environment Variables:**
+- Loaded from `.env` files in each service directory
+- `.env` files are generated by Vault Agent from templates
+- Never commit `.env` files (they're gitignored)
 
 ## Development Commands
 
-### Testing Jobspecs Locally
-
-Validate a jobspec:
-```bash
-nomad job validate -var 'artifact=https://example.com/binary' jobs/<jobspec>.nomad
-```
-
-Plan a deployment (dry-run):
-```bash
-nomad job plan -var 'artifact=https://example.com/binary' jobs/<jobspec>.nomad
-```
-
-Deploy a job:
-```bash
-nomad job run -var 'artifact=https://example.com/binary' jobs/<jobspec>.nomad
-```
-
-### Environment Setup
-
-Set NOMAD_TOKEN in `.env` file (mise will load it automatically):
-```bash
-echo 'NOMAD_TOKEN=your-token-here' > .env
-```
-
-Mise will install the correct Nomad version automatically when you run nomad commands.
-
-### Working with Docker Compose Services
+### Working with Services Locally
 
 Start a service:
 ```bash
@@ -146,56 +134,294 @@ View logs:
 docker compose logs -f
 ```
 
+View logs for specific service:
+```bash
+docker compose logs -f <service-name>
+```
+
 Stop a service:
 ```bash
 docker compose down
+```
+
+Restart a service:
+```bash
+docker compose restart
+```
+
+Rebuild and restart:
+```bash
+docker compose up -d --build
+```
+
+### Secrets Management
+
+Render all secrets from Vault:
+```bash
+mise run render-secrets
+```
+
+This will:
+1. Read templates from `<service>/secrets.env.tmpl`
+2. Fetch secrets from Vault
+3. Write rendered `.env` files to each service directory
+
+Add a new service to secrets rendering:
+1. Create `<service>/secrets.env.tmpl` with Vault secret paths
+2. Add a template block to `vault_config.hcl`:
+   ```hcl
+   template {
+     source      = "<service>/secrets.env.tmpl"
+     destination = "<service>/.env"
+   }
+   ```
+3. Run `mise run render-secrets`
+
+### Caddy Management
+
+Reload Caddy configuration:
+```bash
+cd caddy
+docker compose exec app caddy reload --config /etc/caddy/Caddyfile
+```
+
+Test Caddyfile syntax:
+```bash
+cd caddy
+docker compose exec app caddy validate --config /etc/caddy/Caddyfile
+```
+
+View Caddy logs:
+```bash
+cd caddy
+docker compose logs -f
 ```
 
 ## Key Patterns
 
 ### Adding a New Service
 
-1. Create a new jobspec in `jobs/<service-name>.nomad`
-2. Follow the standard pattern: include `variable "artifact"`, use exec or docker driver, register service with Nomad provider
-3. If ingress is needed, add a reverse_proxy block to `jobs/caddy.nomad`
-4. Services should set `GOMEMLIMIT` for Go applications to prevent OOM kills
-5. Use canary deployments with auto-promote and auto-revert for safer deployments
+1. **Create service directory with compose file:**
+   ```bash
+   mkdir <service-name>
+   cd <service-name>
+   ```
 
-### Service Dependencies
+2. **Create `compose.yml`:**
+   ```yaml
+   services:
+     app:
+       image: <image>
+       # or build:
+       #   context: .
+       #   dockerfile: Dockerfile
+       restart: unless-stopped
+       ports:
+         - <external-port>:<internal-port>
+       environment:
+         KEY: "${VALUE}"  # Loaded from .env
+   ```
 
-Services find dependencies via Nomad service discovery in templates:
-```hcl
-REDIS_HOST="{{range nomadService "redis"}}{{.Address}}{{end}}"
-REDIS_PORT="{{range nomadService "redis"}}{{.Port}}{{end}}"
-```
+3. **If secrets are needed, create Vault template:**
+   ```bash
+   # Create secrets.env.tmpl
+   touch secrets.env.tmpl
+   
+   # Add secrets to Vault at deploy/<service-name>
+   # Add template block to vault_config.hcl
+   ```
+
+4. **If HTTP access is needed, add to Caddy:**
+   Edit `caddy/conf/Caddyfile`:
+   ```
+   <service>.taiidani.com {
+     reverse_proxy {
+       to 192.168.102.5:<port>
+     }
+   }
+   ```
+   Then reload Caddy: `cd caddy && docker compose exec app caddy reload --config /etc/caddy/Caddyfile`
+
+5. **Start the service:**
+   ```bash
+   cd <service-name>
+   docker compose up -d
+   ```
+
+### Deployment Workflows
+
+**Manual Deployment (on host):**
+1. Pull latest changes on the host
+2. Render secrets if templates changed: `mise run render-secrets`
+3. Navigate to service directory
+4. Pull new images or rebuild: `docker compose pull` or `docker compose build`
+5. Restart service: `docker compose up -d`
+6. Check logs: `docker compose logs -f`
+
+**CI/CD Deployment (from GitHub Actions):**
+
+Use the reusable workflow to deploy from your service repositories:
+
+1. **For services without artifacts** (using pre-built images):
+   ```yaml
+   jobs:
+     deploy:
+       uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
+       with:
+         service: "my-service"  # Directory name in /mnt/services
+   ```
+
+2. **For services with binary artifacts**:
+   ```yaml
+   jobs:
+     build:
+       # ... build your binary ...
+       
+     publish:
+       needs: build
+       uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
+       with:
+         artifact-name: "my-binary"
+         filename: "my-binary"
+     
+     deploy:
+       needs: publish
+       uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
+       with:
+         service: "my-service"
+         artifact: ${{ needs.publish.outputs.artifact }}
+   ```
+
+**How CI/CD Deployment Works:**
+1. GitHub Actions connects to home lab via Tailscale
+2. SSH into terra at `/mnt/services`
+3. Pull latest compose configurations: `git pull origin main`
+4. Render secrets: `mise run render-secrets`
+5. Navigate to service directory
+6. Deploy with rebuild: `docker compose up -d --build --wait`
+   - If artifact URL provided, it's passed as `ARTIFACT` build arg
+   - Dockerfile `ADD` directives download and extract artifacts
+7. Show status and recent logs
 
 ### Volume Mounts
 
-Persistent storage uses host volumes:
-```hcl
-volume_mount {
-  volume      = "hashistack"
-  destination = "/data"
-  read_only   = "false"
-}
-
-volume "hashistack" {
-  type      = "host"
-  source    = "hashistack"
-  read_only = "false"
-}
+**Persistent Data:**
+Each service manages its own data volumes in its directory:
+```yaml
+volumes:
+  - ./data:/data              # Application data
+  - ./data/redis:/data        # Redis data
+  - ./data/config:/config     # Configuration
 ```
+
+**Caddy Persistence:**
+Caddy stores certificates and configuration in:
+- `./data/data` - Certificate storage
+- `./data/config` - Caddy's internal config
+
+## GitHub Workflows
+
+### Reusable Workflows
+
+**`.github/workflows/deploy.yml`** - Docker Compose deployment:
+- Connects to home lab via Tailscale and SSH
+- Pulls latest configurations from git
+- Renders secrets with Vault Agent
+- Deploys with `docker compose up -d --build --wait`
+- Optionally passes artifact URL as `ARTIFACT` build arg
+- Dockerfile `ADD` directives handle artifact downloads
+- Shows deployment status and recent logs
+
+**`.github/workflows/publish-binary.yml`** - Binary publishing:
+- Downloads artifacts from GitHub Actions
+- Uploads to DigitalOcean Spaces (S3-compatible) at `rnd-public.sfo3.digitaloceanspaces.com`
+- Returns public URL for the artifact
+- Used in conjunction with deploy-with-artifact.yml
+- Requires Vault credentials for DigitalOcean Spaces access
+
+### Required Secrets in Vault
+
+For the deployment workflows to function, these secrets must be in Vault:
+- `credentials/data/github` - `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_SECRET`
+- `credentials/data/github` - `DEPLOY_SSH_KEY` (SSH private key for terra host)
+- `credentials/data/digitalocean/spaces` - `spaces_access_id` and `spaces_secret_key` (for binary publishing)
+
+### Example: Service Repository Workflows
+
+**Simple deployment (pre-built image):**
+```yaml
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
+    with:
+      service: "my-service"
+```
+
+**Deployment with binary artifact:**
+```yaml
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - run: go build -o groceries
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary
+          path: groceries
+
+  publish:
+    needs: build
+    uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
+    with:
+      artifact-name: "binary"
+      filename: "groceries"
+
+  deploy:
+    needs: publish
+    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
+    with:
+      service: "groceries"
+      artifact: ${{ needs.publish.outputs.artifact }}
+```
+
+**In your Dockerfile, use the ARTIFACT build arg:**
+```dockerfile
+ARG ARTIFACT
+ADD ${ARTIFACT} /app/groceries
+RUN chmod +x /app/groceries
+```
+
+Docker's `ADD` directive will automatically download from URLs and extract gzipped files.
+
+## Archived Components
+
+**`archive/jobs/`** - Old Nomad jobspecs (historical reference)
+**`archive/dockge/`**, **`archive/jellyfin/`** - Deprecated service configurations
 
 ## Vault Integration
 
-All GitHub workflows authenticate to Vault using JWT:
-- Vault URL: `https://rnd.vault.0846e66f-a975-4a88-9e46-6dc6267e9b73.aws.hashicorp.cloud:8200`
-- Role: `github-role`
-- Path: `github`
-- Namespace: `admin`
+Vault is used exclusively for secrets management via Vault Agent. Direct access patterns from GitHub workflows (Nomad deployments) are no longer used.
 
-Secrets are stored at:
-- `nomad/creds/deployer` - Nomad token
-- `credentials/data/github` - Tailscale OAuth credentials
-- `credentials/data/digitalocean/spaces` - S3 credentials
+**Current Vault Usage:**
+- Secrets rendering via Vault Agent (local on terra)
+- Binary publishing workflow still uses Vault for S3 credentials
+
+**Secret Paths:**
 - `deploy/<service-name>` - Service-specific secrets
+- `credentials/data/digitalocean/spaces` - S3 credentials (for binary publishing)
+- `credentials/data/github` - Tailscale OAuth credentials (legacy, not currently used)
+- `nomad/creds/deployer` - Nomad token (legacy, not currently used)

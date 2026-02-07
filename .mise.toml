@@ -1,11 +1,11 @@
 [env]
-# Add the NOMAD_TOKEN to this file to make it easier to communicate with Nomad
+# Local environment variables
 _.file = '.env'
 VAULT_ADDR = "https://rnd.vault.0846e66f-a975-4a88-9e46-6dc6267e9b73.aws.hashicorp.cloud:8200"
 VAULT_NAMESPACE = "admin"
 
 [tools]
-nomad = "1.9.4"
+# Vault is used for secrets management via Vault Agent
 vault = "latest"
 
 [tasks.render-secrets]
