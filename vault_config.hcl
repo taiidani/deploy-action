@@ -14,6 +14,11 @@ template {
 }
 
 template {
+  source      = "groceries/secrets.env.tmpl"
+  destination = "groceries/.env"
+}
+
+template {
   source      = "lil-dumpster/secrets.env.tmpl"
   destination = "lil-dumpster/.env"
 }

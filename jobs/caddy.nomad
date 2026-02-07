@@ -59,9 +59,7 @@ www.taiidani.com {
 
 groceries.taiidani.com {
   reverse_proxy {
-    {{- range nomadService "groceries" }}
-    to {{ .Address }}:{{ .Port }}
-    {{- end }}
+    to 192.168.102.5:3501
   }
 }
 

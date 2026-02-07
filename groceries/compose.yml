@@ -1,0 +1,26 @@
+name: groceries
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - 3501:3000
+    environment:
+      SENTRY_ENVIRONMENT: "prod"
+      SENTRY_DSN: "https://b7c94726c8e39af642f012583a6be274@o55858.ingest.us.sentry.io/4508903750434816"
+      PORT: "3000"
+      URL: "https://groceries.taiidani.com"
+      LOG_LEVEL: "info"
+      DB_TYPE: "postgres"
+      REDIS_HOST: redis.groceries_default
+      REDIS_PORT: "6379"
+      DATABASE_URL: "${DATABASE_URL}"
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    volumes:
+      - ./data/redis:/data
