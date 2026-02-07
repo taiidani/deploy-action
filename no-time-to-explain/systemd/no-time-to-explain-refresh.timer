@@ -1,0 +1,12 @@
+[Unit]
+Description=Run No Time to Explain refresh every 10 minutes
+Requires=no-time-to-explain-refresh.service
+After=docker.service
+
+[Timer]
+# Run every 10 minutes
+OnCalendar=*:0/10
+Persistent=true
+
+[Install]
+WantedBy=timers.target
