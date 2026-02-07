@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ARTIFACT: ${ARTIFACT}
+        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/guess-my-word/latest.tgz}
     restart: unless-stopped
     command: ["/app/guess-my-word", "--port=3000"]
     ports:

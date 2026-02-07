@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ARTIFACT: ${ARTIFACT}
+        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/no-time-to-explain/latest.tgz}
     restart: unless-stopped
     ports:
       - 3502:3000
