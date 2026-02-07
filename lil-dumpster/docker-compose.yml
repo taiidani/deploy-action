@@ -14,5 +14,7 @@ services:
   redis:
     image: redis:6
     restart: unless-stopped
+    healthcheck:
+      test: redis-cli ping || exit 1
     volumes:
       - ./data/redis:/data

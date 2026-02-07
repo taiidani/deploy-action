@@ -8,6 +8,8 @@ services:
     networks:
       - default
       - backend
+    healthcheck:
+      test: redis-cli ping || exit 1
     volumes:
       - ./data/redis:/opt/data/redis
       - ./redis.conf:/config/redis.conf:ro
