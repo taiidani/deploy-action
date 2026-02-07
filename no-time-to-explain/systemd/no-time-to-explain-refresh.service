@@ -6,7 +6,7 @@ Requires=docker.service
 [Service]
 Type=oneshot
 WorkingDirectory=/mnt/services/no-time-to-explain
-ExecStart=/usr/bin/docker compose run --rm app no-time-to-explain refresh
+ExecStart=/usr/bin/docker compose run --rm app /app/no-time-to-explain refresh
 
 # Logging
 StandardOutput=journal
