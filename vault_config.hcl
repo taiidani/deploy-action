@@ -24,6 +24,11 @@ template {
 }
 
 template {
+  source      = "miniflux/secrets.env.tmpl"
+  destination = "miniflux/.env"
+}
+
+template {
   source      = "no-time-to-explain/secrets.env.tmpl"
   destination = "no-time-to-explain/.env"
 }
