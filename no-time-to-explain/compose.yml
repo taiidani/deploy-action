@@ -19,7 +19,7 @@ services:
       DB_TYPE: "postgres"
       REDIS_HOST: redis.no-time-to-explain_default
       REDIS_PORT: "6379"
-      DATABASE_URL: "${DATABASE_URL}"
+      DATABASE_URL: "postgresql://${DATABASE_USER}:${DATABASE_PASS}@${DATABASE_HOST}:${DATABASE_PORT}/no-time-to-explain?sslmode=require"
       DISCORD_TOKEN: "${DISCORD_TOKEN}"
       DISCORD_CLIENT_ID: "${DISCORD_CLIENT_ID}"
       DISCORD_CLIENT_SECRET: "${DISCORD_CLIENT_SECRET}"

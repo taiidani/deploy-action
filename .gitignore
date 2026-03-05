@@ -4,3 +4,6 @@
 
 # Service data directories
 data/
+
+# Mise
+mise.local.toml

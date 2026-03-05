@@ -1,16 +1,15 @@
+[plugins]
+fnox-env = "https://github.com/jdx/mise-env-fnox"
+
+[settings]
+env_cache = true
+
 [env]
-# Local environment variables
-_.file = '.env'
-VAULT_ADDR = "https://rnd.vault.0846e66f-a975-4a88-9e46-6dc6267e9b73.aws.hashicorp.cloud:8200"
-VAULT_NAMESPACE = "admin"
+_.fnox-env = { tools = true }
 
 [tools]
-# Vault is used for secrets management via Vault Agent
-vault = "latest"
-
-[tasks.render-secrets]
-description = "Render secrets for Docker Compose services using Vault Agent"
-run = "vault agent --config=vault_config.hcl -exit-after-auth"
+1password = "2.33.0-beta.02"
+fnox = "latest"
 
 [tasks.deploy]
 description = "Deploy a service with optional artifact"

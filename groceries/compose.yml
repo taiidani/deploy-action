@@ -19,7 +19,7 @@ services:
       DB_TYPE: "postgres"
       REDIS_HOST: redis.groceries_default
       REDIS_PORT: "6379"
-      DATABASE_URL: "${DATABASE_URL}"
+      DATABASE_URL: "postgresql://${DATABASE_USER}:${DATABASE_PASS}@${DATABASE_HOST}:${DATABASE_PORT}/groceries?sslmode=require"
 
   redis:
     image: redis:7

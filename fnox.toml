@@ -1,0 +1,11 @@
+default_provider = "onepass"
+
+[providers.onepass]
+type = "1password"
+vault = "Development"
+
+[secrets]
+"DATABASE_HOST"= { provider = "onepass", value = "DigitalOcean/server" }
+"DATABASE_PORT"= { provider = "onepass", value = "DigitalOcean/port" }
+"DATABASE_USER"= { provider = "onepass", value = "DigitalOcean/username" }
+"DATABASE_PASS"= { provider = "onepass", value = "DigitalOcean/password" }
