@@ -8,14 +8,14 @@ This repository contains Docker Compose configurations and deployment tooling fo
 
 See [CLAUDE.md](./CLAUDE.md) for comprehensive documentation on:
 - Service architecture and patterns
-- Secrets management with Vault
+- Secrets management with 1Password + fnox
 - Development and deployment workflows
 - Adding new services
 
 ## Key Components
 
 - **Docker Compose services** - Each service in its own directory with `compose.yml`
-- **Vault Agent integration** - Secrets rendered from templates to `.env` files
+- **1Password + fnox integration** - Secrets injected as environment variables at runtime
 - **Caddy ingress** - HTTP reverse proxy with automatic HTTPS
 - **Legacy workflows** - Binary publishing to DigitalOcean Spaces (still active)
 

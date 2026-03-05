@@ -5,7 +5,7 @@ This document explains how to deploy services from their individual repositories
 ## Deployment Architecture
 
 **The Setup:**
-- Services run on your home lab host (terra) at `/mnt/services`
+- Services run on your home lab host(s) at `/mnt/services`
 - Each service has a `compose.yml`, optional Dockerfile, and secrets
 - GitHub Actions connects via Tailscale + SSH to trigger deployments
 - Docker handles artifact downloads via Dockerfile `ADD` directives
@@ -54,6 +54,8 @@ jobs:
       artifact: ${{ needs.publish.outputs.artifact }}
 ```
 
+**Note:** Secrets are automatically injected by fnox when the deployment runs. See the Secrets Management section below.
+
 ## How Artifact Downloads Work
 
 The workflow passes the artifact URL as the `ARTIFACT` build argument to Docker Compose. Your Dockerfile uses Docker's `ADD` directive with a default value:
@@ -80,7 +82,7 @@ When the workflow runs:
 
 The Mise task handles:
 - Pulling latest configurations from git
-- Rendering secrets with Vault Agent
+- Injecting secrets via fnox (automatically)
 - Building/starting the service with Docker Compose
 - Showing deployment status and logs
 
@@ -104,7 +106,7 @@ For a service to be deployable:
    └── my-service/
        ├── compose.yml
        ├── Dockerfile (if building custom image)
-       └── secrets.env.tmpl (if using Vault secrets)
+       └── fnox.toml (if service needs secrets)
    ```
 
 2. **Dockerfile that accepts ARTIFACT arg with default:**
@@ -142,44 +144,52 @@ For a service to be deployable:
    
    The `args: ARTIFACT: ${ARTIFACT}` passes the environment variable to the Dockerfile's `ARG`.
 
-4. **Vault secrets (if needed):**
-   - Add secrets to Vault at `deploy/my-service`
-   - Create `my-service/secrets.env.tmpl`
-   - Register in `vault_config.hcl`
+4. **1Password secrets (if needed):**
+   - Add secrets to 1Password "Development" vault (create an item for the service)
+   - Create `my-service/fnox.toml`:
+     ```toml
+     default_provider = "onepass"
+     
+     [providers.onepass]
+     type = "1password"
+     vault = "Development"
+     
+     [secrets]
+     "SECRET_NAME" = { provider = "onepass", value = "Item Name/field" }
+     ```
+   - Reference in compose.yml: `environment: SECRET_NAME: "${SECRET_NAME}"`
 
 5. **Caddy ingress (if needed):**
    - Add reverse proxy block to `caddy/conf/Caddyfile`
    - Reload Caddy: `cd caddy && docker compose exec app caddy reload --config /etc/caddy/Caddyfile`
 
-## Required Vault Secrets
+## Required Secrets
 
-Ensure these are set up in Vault:
+**1Password "Development" Vault:**
+- Service-specific items with credentials (e.g., "my-service Discord Bot")
+- Database credentials (referenced in root `fnox.toml`)
+- DigitalOcean Spaces credentials (for binary publishing)
 
-```bash
-# Tailscale OAuth credentials for GitHub Actions
-vault kv put credentials/github \
-  TAILSCALE_OAUTH_CLIENT_ID="..." \
-  TAILSCALE_OAUTH_SECRET="..."
-
-# SSH key for deploying to terra
-vault kv put credentials/github \
-  DEPLOY_SSH_KEY="$(cat ~/.ssh/id_ed25519)"
-
-# DigitalOcean Spaces credentials (for binary publishing)
-vault kv put credentials/digitalocean/spaces \
-  spaces_access_id="..." \
-  spaces_secret_key="..."
+**mise.local.toml (on host):**
+```toml
+[env]
+OP_SERVICE_ACCOUNT_TOKEN = "ops_eyJ..."
 ```
+
+**GitHub Secrets (for CI/CD workflows):**
+- `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_SECRET` - For Tailscale connection
+- `DEPLOY_SSH_KEY` - SSH private key for connecting to host
+- `OP_SERVICE_ACCOUNT_TOKEN` - 1Password service account token (for workflows that need secrets)
 
 ## Troubleshooting
 
 ### Deployment fails with "Permission denied"
-- Check that `DEPLOY_SSH_KEY` is in Vault
-- Verify the SSH key is authorized on terra: `~/.ssh/authorized_keys`
+- Check that `DEPLOY_SSH_KEY` is configured in GitHub Secrets
+- Verify the SSH key is authorized on host: `~/.ssh/authorized_keys`
 
 ### Service fails to start
-- SSH into terra and check logs: `cd /mnt/services/my-service && docker compose logs`
-- Verify secrets are rendered: `ls -la .env`
+- SSH into host and check logs: `cd /mnt/services/my-service && docker compose logs`
+- Verify secrets are injected: `cd /mnt/services/my-service && fnox env`
 - Check if service is using correct ports (no conflicts)
 
 ### Artifact download fails
@@ -188,9 +198,11 @@ vault kv put credentials/digitalocean/spaces \
 - Test manually: `docker build --build-arg ARTIFACT=<url> .`
 
 ### Secrets not available
-- Run `mise run render-secrets` on terra
-- Check `vault_config.hcl` has a template block for your service
-- Verify Vault token is valid: `vault token lookup`
+- Verify `fnox.toml` exists in the service directory
+- Check secrets exist in 1Password "Development" vault
+- Test secret fetching: `cd /mnt/services/my-service && fnox env`
+- Verify `OP_SERVICE_ACCOUNT_TOKEN` is set in `mise.local.toml`
+- Ensure item names and field names in `fnox.toml` match 1Password exactly
 
 ### Build doesn't use new artifact
 - Ensure you're using `docker compose up -d --build` (with `--build` flag)
