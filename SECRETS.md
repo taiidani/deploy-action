@@ -111,15 +111,29 @@ Common 1Password fields: `credential`, `token`, `username`, `password`, `server`
 
 ## CI/CD Integration
 
-**Current State (Transition Period):**
+The GitHub Actions workflows use GitHub Environment secrets for centralized credential management. Service repositories require no secret configuration - they simply call the reusable workflows.
 
-The GitHub Actions workflows in `.github/workflows/` currently still use Vault to fetch secrets needed for CI/CD operations (Tailscale OAuth, SSH keys, DigitalOcean Spaces credentials). These workflows use Vault's JWT authentication method with GitHub OIDC.
+### Setup
 
-**On the deployment host (terra):**
+Create two environments in this repository (Settings → Environments):
 
-Once the workflow connects to terra via SSH, mise and fnox are configured with the 1Password service account token in `mise.local.toml`. When `mise run deploy` executes, fnox automatically fetches service secrets from 1Password and injects them as environment variables for Docker Compose.
+**1. `publish` environment:**
+- `AWS_ACCESS_KEY_ID` - DigitalOcean Spaces access key
+- `AWS_SECRET_ACCESS_KEY` - DigitalOcean Spaces secret key
 
-**Note:** Service deployments already use 1Password + fnox for all application secrets. Only the GitHub Actions infrastructure secrets still use Vault during this transition period.
+**2. `production` environment:**
+- `TAILSCALE_OAUTH_CLIENT_ID` - Tailscale OAuth client ID
+- `TAILSCALE_OAUTH_SECRET` - Tailscale OAuth secret
+- `DEPLOY_SSH_KEY` - SSH private key for terra (entire key including headers)
+
+Optional: Create additional deployment environments (`staging`, `dev`) with the same three secrets as `production`.
+
+### How It Works
+
+- `publish-binary.yml` uses the `publish` environment
+- `deploy.yml` uses a dynamic environment (defaults to `production`, overridable via `environment:` input)
+- Service repositories call the workflows without any secrets configured
+- On host, mise and fnox automatically inject application secrets during deployment
 
 ## Troubleshooting
 

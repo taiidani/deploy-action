@@ -369,7 +369,7 @@ Caddy stores certificates and configuration in:
 - Uploads twice: once with the full filename, once as "latest.tgz"
 - The "latest.tgz" copy enables local development without specifying artifact URL
 - Returns public URL for the specific artifact (not "latest.tgz")
-- Currently uses Vault for DigitalOcean Spaces credentials (legacy, will migrate to 1Password)
+
 
 ### Required Secrets
 
@@ -379,12 +379,14 @@ For the deployment workflows to function, these secrets must be configured:
 - Service account token stored in `mise.local.toml` as `OP_SERVICE_ACCOUNT_TOKEN` (on host)
 - Per-service secrets in their respective items (e.g., "lil-dumpster Discord Token")
 
-**In HashiCorp Vault (GitHub workflows - legacy, will migrate):**
-- `credentials/data/github` - `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_SECRET`
-- `credentials/data/github` - `DEPLOY_SSH_KEY` (SSH private key for host)
-- `credentials/data/digitalocean/spaces` - `spaces_access_id` and `spaces_secret_key` (for binary publishing)
+**In GitHub Environments** (in this repository):
+- `publish` environment:
+  - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - DigitalOcean Spaces credentials
+- `production` environment (and optional `staging`, `dev`, etc.):
+  - `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_SECRET` - For Tailscale connection
+  - `DEPLOY_SSH_KEY` - SSH private key for terra
 
-**Note:** GitHub Actions workflows (`.github/workflows/`) currently use Vault for CI/CD infrastructure secrets (Tailscale, SSH, S3 credentials). Service application secrets use 1Password + fnox. This is a transition state - eventually all secrets will move away from Vault.
+See [SECRETS.md](./SECRETS.md) for setup details.
 
 ### Example: Service Repository Workflow
 ```yaml

@@ -168,7 +168,6 @@ For a service to be deployable:
 **1Password "Development" Vault:**
 - Service-specific items with credentials (e.g., "my-service Discord Bot")
 - Database credentials (referenced in root `fnox.toml`)
-- DigitalOcean Spaces credentials (for binary publishing)
 
 **mise.local.toml (on host):**
 ```toml
@@ -176,10 +175,14 @@ For a service to be deployable:
 OP_SERVICE_ACCOUNT_TOKEN = "ops_eyJ..."
 ```
 
-**GitHub Secrets (for CI/CD workflows):**
-- `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_SECRET` - For Tailscale connection
-- `DEPLOY_SSH_KEY` - SSH private key for connecting to host
-- `OP_SERVICE_ACCOUNT_TOKEN` - 1Password service account token (for workflows that need secrets)
+**GitHub Environments (in this repository):**
+- `publish` environment:
+  - `AWS_ACCESS_KEY_ID` - DigitalOcean Spaces access key
+  - `AWS_SECRET_ACCESS_KEY` - DigitalOcean Spaces secret key
+- `production` environment (and optional `staging`, `dev`, etc.):
+  - `TAILSCALE_OAUTH_CLIENT_ID` - For Tailscale connection to home lab
+  - `TAILSCALE_OAUTH_SECRET` - For Tailscale connection to home lab
+  - `DEPLOY_SSH_KEY` - SSH private key for connecting to terra
 
 ## Troubleshooting
 

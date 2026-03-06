@@ -47,32 +47,16 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
-      id-token: write
     env:
       DEPLOY_HOST: "terra"
       DEPLOY_USER: "rnixon"
       DEPLOY_PATH: "/mnt/services"
     steps:
-      - name: Vault
-        id: vault
-        uses: hashicorp/vault-action@v3
-        with:
-          url: https://rnd.vault.0846e66f-a975-4a88-9e46-6dc6267e9b73.aws.hashicorp.cloud:8200
-          role: github-role
-          method: jwt
-          path: github
-          namespace: admin
-          jwtGithubAudience: https://github.com/taiidani
-          secrets: |
-            credentials/data/github TAILSCALE_OAUTH_CLIENT_ID | TS_OAUTH_CLIENT_ID;
-            credentials/data/github TAILSCALE_OAUTH_SECRET | TS_OAUTH_SECRET;
-            credentials/data/github DEPLOY_SSH_KEY | DEPLOY_SSH_KEY;
-
       - name: Tailscale
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ steps.vault.outputs.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ steps.vault.outputs.TS_OAUTH_SECRET }}
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
           tags: tag:ci
           version: latest
           ping: ${{ env.DEPLOY_HOST }}
@@ -80,7 +64,7 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ steps.vault.outputs.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
