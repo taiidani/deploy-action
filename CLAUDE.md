@@ -8,7 +8,7 @@ This repository contains deployment configurations for taiidani's home lab. All 
 1. Docker Compose configurations for all services
 2. 1Password + fnox integration for secrets management
 3. Caddy reverse proxy for HTTP ingress
-4. GitHub Actions workflows for CI/CD (uses Tailscale OIDC, no static credentials)
+4. GitHub Actions workflow for CI/CD (uses Tailscale OIDC, no static credentials)
 5. Artifacts uploaded to `<service>/artifacts/` (within service directory)
 
 ## Architecture
@@ -300,26 +300,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # ...
-
+      - run: go build -o my-service && tar -czf my-service.tgz my-service
       - uses: actions/upload-artifact@v4
         with:
           name: binary
           path: my-service.tgz
 
-  publish:
+  deploy:
     needs: build
-    uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
+    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
     with:
       artifact-name: "binary"
       filename: "my-service.tgz"
-  
-  deploy:
-    needs: publish
-    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
-    with:
-      service: "my-service"
-      artifact: ${{ needs.publish.outputs.artifact }}
 ```
 
 ### Volume Mounts
@@ -340,16 +332,14 @@ Caddy stores certificates and configuration in:
 
 ## GitHub Workflows
 
-### Reusable Workflows
+### Reusable Workflow
 
-**`.github/workflows/deploy.yml`** - Docker Compose deployment:
-- Requires an artifact URL as input
-- Connects to home lab via Tailscale and SSH
-- Executes: `mise run deploy <service> <artifact-url>`
-- Deployment logic is in `mise.toml` for consistency
-- Can be run locally with the same command
-
-**`.github/workflows/publish-binary.yml`** - Uploads artifacts to `/mnt/services/artifacts/<service>/`
+**`.github/workflows/deploy.yml`** - Combined upload and deploy:
+- Downloads artifact from GitHub Actions
+- Connects to home lab via Tailscale OIDC + SSH (zero secrets)
+- Uploads artifact to `<service>/artifacts/` on host
+- Executes: `mise run deploy <service> <artifact-path>`
+- Single workflow = one Tailscale connection, simpler security
 
 ### Required Secrets
 

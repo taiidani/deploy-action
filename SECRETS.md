@@ -30,11 +30,11 @@ Secrets auto-inject when you run `docker compose up -d`
 
 **Zero GitHub secrets required!** 🎉
 
-Both workflows use:
-- **Tailscale OIDC** for network access (config hardcoded in workflows, not secrets)
+The deploy workflow uses:
+- **Tailscale OIDC** for network access (config hardcoded in workflow, not secrets)
 - **Tailscale SSH** for authentication (no SSH keys needed)
 
-Service repos need no secrets - they call the reusable workflows.
+Service repos need no secrets - they call the reusable workflow.
 
 ## Tailscale SSH Setup
 
@@ -65,8 +65,11 @@ This allows CI runners (with `tag:ci`) to SSH as `rnixon` without any SSH keys.
    - Scopes: Devices: Write
    - Tags: `tag:ci`
    - Federated identity: GitHub, repositories: `taiidani/*`
+   - **Subject filter**: `environment:production` (restricts to production deployments only)
 
-The OAuth client ID and audience are hardcoded in workflow files (they're public identifiers, not secrets).
+The OAuth client ID and audience are hardcoded in the workflow file (they're public identifiers, not secrets).
+
+**Security Note:** The subject filter ensures only workflows using the `production` environment can authenticate. This prevents arbitrary branches or pull requests from accessing your deployment infrastructure.
 
 ## Troubleshooting
 

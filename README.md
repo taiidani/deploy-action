@@ -26,7 +26,6 @@ mise run deploy <service> /path/to/artifact.tgz
 
 ## Documentation
 
-- **[SETUP.md](./SETUP.md)** - Initial setup (Tailscale SSH + OIDC)
 - **[CLAUDE.md](./CLAUDE.md)** - Main docs for Claude Code assistant
 - **[SECRETS.md](./SECRETS.md)** - 1Password + fnox setup
 
@@ -44,17 +43,10 @@ jobs:
           name: binary
           path: my-service.tgz
 
-  publish:
+  deploy:
     needs: build
-    uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
+    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
     with:
       artifact-name: "binary"
       filename: "my-service.tgz"
-
-  deploy:
-    needs: publish
-    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
-    with:
-      service: "my-service"
-      artifact: ${{ needs.publish.outputs.artifact }}
 ```

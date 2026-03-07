@@ -3,31 +3,33 @@ name: deploy
 on:
   workflow_call:
     inputs:
-      service:
+      artifact-name:
+        required: false
+        type: string
+        default: "artifact"
+        description: "Name of the GitHub Actions artifact to download"
+      filename:
         required: true
         type: string
-        description: "Service directory name (e.g., 'groceries', 'no-time-to-explain')"
-      artifact:
-        required: true
-        type: string
-        description: "Artifact URL (passed as ARTIFACT build arg)"
+        description: "Filename of the artifact (e.g., 'my-service.tgz')"
       environment:
         required: false
         type: string
         default: "production"
+        description: "Deployment environment"
       url:
         required: false
         type: string
+        description: "Deployment URL for environment tracking"
   workflow_dispatch:
     inputs:
-      service:
+      artifact-name:
+        required: false
+        type: string
+        default: "artifact"
+      filename:
         required: true
         type: string
-        description: "Service directory name"
-      artifact:
-        required: true
-        type: string
-        description: "Artifact URL"
       environment:
         required: false
         type: string
@@ -43,7 +45,7 @@ jobs:
       name: ${{ inputs.environment }}
       url: ${{ inputs.url }}
     concurrency:
-      group: deploy-${{ inputs.service }}
+      group: deploy-${{ github.repository }}
       cancel-in-progress: false
     permissions:
       contents: read
@@ -71,7 +73,35 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ inputs.artifact-name }}
+
+      - name: Upload artifact to host
+        id: upload
+        run: |
+          # Extract service name from repository (e.g., "taiidani/groceries" -> "groceries")
+          SERVICE="${{ github.repository }}"
+          SERVICE="${SERVICE##*/}"
+
+          # Create service artifact directory on deploy host
+          ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+            "mkdir -p ${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts"
+
+          # Upload with full filename
+          scp ./${{ inputs.filename }} \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts/${{ inputs.filename }}
+
+          # Also upload as "latest.tgz" for local development convenience
+          scp ./${{ inputs.filename }} \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts/latest.tgz
+
+          # Set service name and artifact path for deploy step
+          echo "service=${SERVICE}" >> "$GITHUB_OUTPUT"
+          echo "artifact=artifacts/${{ inputs.filename }}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy service
         run: |
           ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
-            "cd ${{ env.DEPLOY_PATH }} && mise run deploy ${{ inputs.service }} '${{ inputs.artifact }}'"
+            "cd ${{ env.DEPLOY_PATH }} && mise run deploy ${{ steps.upload.outputs.service }} '${{ steps.upload.outputs.artifact }}'"
