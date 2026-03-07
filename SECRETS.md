@@ -122,16 +122,17 @@ Create two environments in this repository (Settings → Environments):
 - `AWS_SECRET_ACCESS_KEY` - DigitalOcean Spaces secret key
 
 **2. `production` environment:**
-- `TAILSCALE_OAUTH_CLIENT_ID` - Tailscale OAuth client ID
-- `TAILSCALE_OAUTH_SECRET` - Tailscale OAuth secret
 - `DEPLOY_SSH_KEY` - SSH private key for terra (entire key including headers)
 
-Optional: Create additional deployment environments (`staging`, `dev`) with the same three secrets as `production`.
+Optional: Create additional deployment environments (`staging`, `dev`) with the same secret as `production`.
+
+**Note:** Tailscale configuration (OAuth Client ID and Audience) is configured directly in `deploy.yml` as environment variables since they're not secrets. Get the OAuth Client ID from your Tailscale admin console when setting up federated identity.
 
 ### How It Works
 
-- `publish-binary.yml` uses the `publish` environment
+- `publish-binary.yml` uses the `publish` environment for DigitalOcean Spaces credentials
 - `deploy.yml` uses a dynamic environment (defaults to `production`, overridable via `environment:` input)
+- Tailscale authentication uses OIDC workload identity federation (no static secrets needed)
 - Service repositories call the workflows without any secrets configured
 - On host, mise and fnox automatically inject application secrets during deployment
 

@@ -47,16 +47,21 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
+      id-token: write # Required for Tailscale OIDC workload identity
     env:
       DEPLOY_HOST: "terra"
       DEPLOY_USER: "rnixon"
       DEPLOY_PATH: "/mnt/services"
+      # Tailscale OIDC configuration - not secrets, safe to hardcode
+      # Get these from: https://login.tailscale.com/admin/settings/oauth
+      TAILSCALE_OAUTH_CLIENT_ID: "TnR1x6KTuY81CNTRL-kSZ1yprV5611CNTRL"
+      TAILSCALE_AUDIENCE: "api.tailscale.com/TnR1x6KTuY81CNTRL-kSZ1yprV5611CNTRL"
     steps:
       - name: Tailscale
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          audience: ${{ env.TAILSCALE_AUDIENCE }}
           tags: tag:ci
           version: latest
           ping: ${{ env.DEPLOY_HOST }}
