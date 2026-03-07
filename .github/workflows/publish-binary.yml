@@ -12,40 +12,57 @@ on:
         type: string
     outputs:
       artifact:
-        description: "The URL to the published artifact"
+        description: "The path to the published artifact on the deploy host"
         value: ${{ jobs.upload.outputs.artifact }}
 
 jobs:
   upload:
     runs-on: ubuntu-latest
-    environment: publish
     permissions:
       contents: read
+      id-token: write # Required for Tailscale OIDC workload identity
+    env:
+      DEPLOY_HOST: "terra"
+      DEPLOY_USER: "rnixon"
+      DEPLOY_PATH: "/mnt/services"
+      # Tailscale OIDC configuration - not secrets, safe to hardcode
+      # Get these from: https://login.tailscale.com/admin/settings/oauth
+      TAILSCALE_OAUTH_CLIENT_ID: "TnR1x6KTuY81CNTRL-kSZ1yprV5611CNTRL"
+      TAILSCALE_AUDIENCE: "api.tailscale.com/TnR1x6KTuY81CNTRL-kSZ1yprV5611CNTRL"
     outputs:
       artifact: ${{ steps.upload.outputs.artifact }}
     steps:
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          audience: ${{ env.TAILSCALE_AUDIENCE }}
+          tags: tag:ci
+          version: latest
+          ping: ${{ env.DEPLOY_HOST }}
+
       - uses: actions/download-artifact@v7
         with:
           name: ${{ inputs.artifact-name }}
 
       - name: upload
         id: upload
-        env:
-          BUCKET_URL: "https://rnd-public.sfo3.digitaloceanspaces.com/${{ github.repository }}"
-          AWS_REGION: "us-west-2" # Not used, but required for the CLI
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
+          # Extract service name from repository (e.g., "taiidani/groceries" -> "groceries")
+          SERVICE="${{ github.repository }}"
+          SERVICE="${SERVICE##*/}"
+
+          # Create service artifact directory on deploy host
+          ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+            "mkdir -p ${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts"
+
           # Upload with full filename
-          aws s3 cp \
-            --endpoint=https://sfo3.digitaloceanspaces.com \
-            --acl public-read \
-              ./${{ inputs.filename }} s3://rnd-public/${{ github.repository }}/${{ inputs.filename }}
+          scp ./${{ inputs.filename }} \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts/${{ inputs.filename }}
 
           # Also upload as "latest.tgz" for local development convenience
-          aws s3 cp \
-            --endpoint=https://sfo3.digitaloceanspaces.com \
-            --acl public-read \
-              ./${{ inputs.filename }} s3://rnd-public/${{ github.repository }}/latest.tgz
+          scp ./${{ inputs.filename }} \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts/latest.tgz
 
-          echo "artifact=${{ env.BUCKET_URL }}/${{ inputs.filename }}" >> "$GITHUB_OUTPUT"
+          # Output the artifact path (relative to service directory)
+          echo "artifact=artifacts/${{ inputs.filename }}" >> "$GITHUB_OUTPUT"

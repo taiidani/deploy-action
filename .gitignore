@@ -5,5 +5,8 @@
 # Service data directories
 data/
 
+# Build artifacts
+artifacts/
+
 # Mise
 mise.local.toml

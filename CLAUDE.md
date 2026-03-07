@@ -8,8 +8,8 @@ This repository contains deployment configurations for taiidani's home lab. All 
 1. Docker Compose configurations for all services
 2. 1Password + fnox integration for secrets management
 3. Caddy reverse proxy for HTTP ingress
-4. GitHub Actions workflows for CI/CD deployments
-5. Binary publishing workflow for DigitalOcean Spaces
+4. GitHub Actions workflows for CI/CD (uses Tailscale OIDC, no static credentials)
+5. Artifacts uploaded to `<service>/artifacts/` (within service directory)
 
 ## Architecture
 
@@ -292,9 +292,7 @@ docker compose logs -f
 4. Restart service: `docker compose up -d` (fnox automatically injects secrets)
 5. Check logs: `docker compose logs -f`
 
-**CI/CD Deployment (from GitHub Actions):**
-
-Use the reusable workflow to deploy from your service repositories. The workflow requires an artifact URL:
+**CI/CD Deployment:**
 
 ```yaml
 jobs:
@@ -302,21 +300,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-      - run: go build -o my-binary
+      # ...
+
       - uses: actions/upload-artifact@v4
         with:
           name: binary
-          path: my-binary
+          path: my-service.tgz
 
   publish:
     needs: build
     uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
     with:
       artifact-name: "binary"
-      filename: "my-binary"
+      filename: "my-service.tgz"
   
   deploy:
     needs: publish
@@ -325,16 +321,6 @@ jobs:
       service: "my-service"
       artifact: ${{ needs.publish.outputs.artifact }}
 ```
-
-**How CI/CD Deployment Works:**
-1. GitHub Actions connects to home lab via Tailscale
-2. SSH into host at `/mnt/services`
-3. Runs: `mise run deploy <service> <artifact-url>`
-4. The Mise task handles:
-   - Pulling latest configurations from git
-   - Injecting secrets via fnox (automatically)
-   - Running `docker compose up -d --build --wait`
-   - Showing deployment status and logs
 
 ### Volume Mounts
 
@@ -363,92 +349,33 @@ Caddy stores certificates and configuration in:
 - Deployment logic is in `mise.toml` for consistency
 - Can be run locally with the same command
 
-**`.github/workflows/publish-binary.yml`** - Binary publishing:
-- Downloads artifacts from GitHub Actions
-- Uploads to DigitalOcean Spaces (S3-compatible) at `rnd-public.sfo3.digitaloceanspaces.com`
-- Uploads twice: once with the full filename, once as "latest.tgz"
-- The "latest.tgz" copy enables local development without specifying artifact URL
-- Returns public URL for the specific artifact (not "latest.tgz")
-
+**`.github/workflows/publish-binary.yml`** - Uploads artifacts to `/mnt/services/artifacts/<service>/`
 
 ### Required Secrets
 
-For the deployment workflows to function, these secrets must be configured:
+- **On host:** `OP_SERVICE_ACCOUNT_TOKEN` in `mise.local.toml` for 1Password
+- **GitHub:** Zero secrets required! 🎉
+- **Tailscale:** Uses OIDC + Tailscale SSH (config hardcoded in workflows, not secrets)
 
-**In 1Password "Development" vault:**
-- Service account token stored in `mise.local.toml` as `OP_SERVICE_ACCOUNT_TOKEN` (on host)
-- Per-service secrets in their respective items (e.g., "lil-dumpster Discord Token")
-
-**In GitHub Environments** (in this repository):
-- `publish` environment:
-  - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - DigitalOcean Spaces credentials
-- `production` environment (and optional `staging`, `dev`, etc.):
-  - `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_SECRET` - For Tailscale connection
-  - `DEPLOY_SSH_KEY` - SSH private key for terra
-
-See [SECRETS.md](./SECRETS.md) for setup details.
-
-### Example: Service Repository Workflow
-```yaml
-name: Deploy
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-      - run: go build -o groceries
-      - uses: actions/upload-artifact@v4
-        with:
-          name: binary
-          path: groceries
-
-  publish:
-    needs: build
-    uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
-    with:
-      artifact-name: "binary"
-      filename: "groceries"
-
-  deploy:
-    needs: publish
-    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
-    with:
-      service: "groceries"
-      artifact: ${{ needs.publish.outputs.artifact }}
-```
-
-**In your Dockerfile, use the ARTIFACT build arg with a default:**
+**Dockerfile pattern:**
 ```dockerfile
 FROM scratch
-ARG ARTIFACT=https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/my-service/latest.tgz
+ARG ARTIFACT=artifacts/latest.tgz
 ADD --unpack ${ARTIFACT} /app/
 CMD ["/app/my-service"]
 ```
 
-**In your compose.yml, pass the ARTIFACT as a build arg:**
+**compose.yml:**
 ```yaml
 services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
       args:
         ARTIFACT: ${ARTIFACT}
 ```
 
-**Key points:**
-- `ARG ARTIFACT=...` in Dockerfile provides a default to the most recent upload ("latest.tgz")
-- `args: ARTIFACT: ${ARTIFACT}` in compose.yml passes the environment variable to the build
-- `ADD --unpack` automatically downloads and extracts gzipped tarballs
-- CI/CD always passes the specific artifact URL via environment variable
-- Local development without `ARTIFACT` env var uses "latest.tgz" by default
+CI/CD passes the specific artifact path. Local dev uses default `latest.tgz`.
 
 ## Archived Components
 

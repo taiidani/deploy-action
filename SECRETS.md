@@ -1,172 +1,77 @@
 # Secrets Management
 
-This repository uses 1Password and fnox for secrets management in Docker Compose deployments.
+Uses 1Password + fnox to inject secrets as environment variables at runtime.
 
-## Overview
+## Setup
 
-All services with sensitive configuration use fnox to inject environment variables from 1Password. This keeps secrets out of the repository while making them available to Docker Compose at runtime.
-
-**How it works:**
-1. mise loads the `mise-env-fnox` plugin which integrates fnox
-2. fnox reads `fnox.toml` files (global and per-service)
-3. fnox authenticates to 1Password using the service account token
-4. fnox fetches secrets and injects them as environment variables
-5. Docker Compose inherits these environment variables and passes them to containers
-
-## Prerequisites
-
-1. **Install mise** (if not already installed):
-   ```bash
-   curl https://mise.run | sh
-   ```
-
-2. **Authenticate to 1Password**:
-   The service account token must be in `mise.local.toml` (gitignored):
-   ```toml
-   [env]
-   OP_SERVICE_ACCOUNT_TOKEN = "ops_eyJ..."
-   ```
-
-3. **Verify fnox is working**:
-   ```bash
-   cd /mnt/services
-   mise install
-   fnox --help
-   ```
-
-## Running Services
-
-When you run Docker Compose in a service directory, fnox automatically injects secrets:
-
-```bash
-cd /mnt/services/<service-name>
-docker compose up -d
-```
-
-To verify what secrets are available:
-```bash
-cd /mnt/services/<service-name>
-fnox env
-```
-
-## Configuration Files
-
-### Global Configuration
-
-- **`mise.toml`** - Configures fnox plugin, tools, and integration
-- **`mise.local.toml`** - Contains 1Password service account token (gitignored)
-- **`fnox.toml`** - Global secrets shared across services (e.g., database credentials)
-
-See the actual files in this repository for the current configuration.
-
-### Per-Service Configuration
-
-Each service with secrets has a `<service>/fnox.toml` file. Examples:
-- [`lil-dumpster/fnox.toml`](./lil-dumpster/fnox.toml) - Discord bot token
-- [`no-time-to-explain/fnox.toml`](./no-time-to-explain/fnox.toml) - Discord + Bungie API credentials
-- [`servarr/fnox.toml`](./servarr/fnox.toml) - WireGuard private key
-- [`tfc-agent/fnox.toml`](./tfc-agent/fnox.toml) - Terraform Cloud token
-
-**Secret value format:**
+**On host:** Create `mise.local.toml` (gitignored):
 ```toml
-"VARIABLE_NAME" = { provider = "onepass", value = "Item Name/field" }
+[env]
+OP_SERVICE_ACCOUNT_TOKEN = "ops_eyJ..."
 ```
 
-Common 1Password fields: `credential`, `token`, `username`, `password`, `server`, `port`
+**In 1Password:** Store secrets in "Development" vault
 
-## Adding Secrets for a New Service
+**Per-service:** Create `<service>/fnox.toml`:
+```toml
+default_provider = "onepass"
 
-1. **Store secrets in 1Password** in the "Development" vault:
-   - Create an item (e.g., "my-service Discord Bot")
-   - Add fields for each secret (e.g., "token", "credential", "api_key")
+[providers.onepass]
+type = "1password"
+vault = "Development"
 
-2. **Create `<service>/fnox.toml`** - See existing service examples above for the structure
+[secrets]
+"API_KEY" = { provider = "onepass", value = "Service Name/field" }
+```
 
-3. **Reference in `compose.yml`**:
-   ```yaml
-   services:
-     app:
-       environment:
-         API_KEY: "${API_KEY}"
-         DATABASE_URL: "${DATABASE_URL}"
-   ```
+Secrets auto-inject when you run `docker compose up -d`
 
-4. **Test locally**:
-   ```bash
-   cd <service>
-   fnox env  # Verify secrets are fetched
-   docker compose up -d
-   ```
+## GitHub Actions
 
-## Services with 1Password Integration
+**Zero GitHub secrets required!** 🎉
 
-**Service-specific secrets:**
-- `lil-dumpster/` - Discord bot token
-- `no-time-to-explain/` - Discord bot and Bungie API credentials
-- `servarr/` - WireGuard private key
-- `tfc-agent/` - Terraform Cloud agent token
+Both workflows use:
+- **Tailscale OIDC** for network access (config hardcoded in workflows, not secrets)
+- **Tailscale SSH** for authentication (no SSH keys needed)
 
-**Global secrets** (via root `fnox.toml`):
-- Database credentials used by `groceries/` and other services
+Service repos need no secrets - they call the reusable workflows.
 
-## CI/CD Integration
+## Tailscale SSH Setup
 
-The GitHub Actions workflows use GitHub Environment secrets for centralized credential management. Service repositories require no secret configuration - they simply call the reusable workflows.
+**On deployment host (`terra`):**
+```bash
+sudo tailscale up --ssh
+```
 
-### Setup
+**In Tailscale admin console (ACLs):**
+```json
+"ssh": [
+  {
+    "action": "accept",
+    "src": ["tag:ci"],
+    "dst": ["autogroup:self"],
+    "users": ["rnixon"]
+  }
+]
+```
 
-Create two environments in this repository (Settings → Environments):
+This allows CI runners (with `tag:ci`) to SSH as `rnixon` without any SSH keys.
 
-**1. `publish` environment:**
-- `AWS_ACCESS_KEY_ID` - DigitalOcean Spaces access key
-- `AWS_SECRET_ACCESS_KEY` - DigitalOcean Spaces secret key
+## Tailscale OIDC Setup
 
-**2. `production` environment:**
-- `DEPLOY_SSH_KEY` - SSH private key for terra (entire key including headers)
+**In Tailscale admin console:**
+1. Go to Settings → OAuth clients
+2. Create OAuth client with:
+   - Scopes: Devices: Write
+   - Tags: `tag:ci`
+   - Federated identity: GitHub, repositories: `taiidani/*`
 
-Optional: Create additional deployment environments (`staging`, `dev`) with the same secret as `production`.
-
-**Note:** Tailscale configuration (OAuth Client ID and Audience) is configured directly in `deploy.yml` as environment variables since they're not secrets. Get the OAuth Client ID from your Tailscale admin console when setting up federated identity.
-
-### How It Works
-
-- `publish-binary.yml` uses the `publish` environment for DigitalOcean Spaces credentials
-- `deploy.yml` uses a dynamic environment (defaults to `production`, overridable via `environment:` input)
-- Tailscale authentication uses OIDC workload identity federation (no static secrets needed)
-- Service repositories call the workflows without any secrets configured
-- On host, mise and fnox automatically inject application secrets during deployment
+The OAuth client ID and audience are hardcoded in workflow files (they're public identifiers, not secrets).
 
 ## Troubleshooting
 
-### Secrets not found
-**Error:** `failed to get secret from provider`
+**Secrets not found:** Check 1Password vault has the item/field, verify `mise.local.toml` has token
 
-**Solutions:**
-- Verify item exists in 1Password "Development" vault
-- Check the item name and field name match exactly (case-sensitive)
-- Ensure `OP_SERVICE_ACCOUNT_TOKEN` is set in `mise.local.toml`
+**Variables empty:** Run `fnox env` to test, clear cache: `rm -rf ~/.local/share/mise/cache/`
 
-### Service account authentication fails
-**Error:** `[ERROR] ... authentication required`
-
-**Solutions:**
-- Check that `mise.local.toml` exists and contains `OP_SERVICE_ACCOUNT_TOKEN`
-- Verify the service account token is still valid
-- Test with: `op account list`
-
-### Environment variables not injecting
-**Error:** Variables are empty in Docker Compose
-
-**Solutions:**
-- Run `fnox env` to verify fnox can fetch secrets
-- Check that `mise.toml` includes the fnox-env plugin
-- Ensure you're running Docker Compose from within the mise environment
-- Try clearing the cache: `rm -rf ~/.local/share/mise/cache/`
-
-### Permission denied accessing 1Password vault
-**Error:** `insufficient permissions to access vault`
-
-**Solutions:**
-- Verify the service account has access to the "Development" vault
-- Check the vault name in `fnox.toml` matches exactly
-- Confirm the service account hasn't been revoked
+**SSH connection fails:** Verify Tailscale SSH is enabled on host, check ACLs allow `tag:ci` to SSH

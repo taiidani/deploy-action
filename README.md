@@ -1,24 +1,60 @@
 # deploy-action
 
-Deployment configurations for taiidani's home lab.
+Home lab deployment configurations using Docker Compose.
 
-This repository contains Docker Compose configurations and deployment tooling for services running on taiidani's home lab infrastructure.
+## What's Here
+
+- **Docker Compose services** - Each service in `<service>/compose.yml`
+- **Secrets** - 1Password + fnox injects secrets at runtime
+- **Ingress** - Caddy reverse proxy in `caddy/`
+- **CI/CD** - GitHub Actions workflows (zero secrets, uses Tailscale OIDC + SSH)
+- **Artifacts** - Binaries stored at `<service>/artifacts/` (relative to service dir)
 
 ## Quick Start
 
-See [CLAUDE.md](./CLAUDE.md) for comprehensive documentation on:
-- Service architecture and patterns
-- Secrets management with 1Password + fnox
-- Development and deployment workflows
-- Adding new services
+**Deploy a service:**
+```bash
+cd <service>
+docker compose up -d
+```
 
-## Key Components
+**Deploy with artifact:**
+```bash
+cd <service>
+mise run deploy <service> /path/to/artifact.tgz
+```
 
-- **Docker Compose services** - Each service in its own directory with `compose.yml`
-- **1Password + fnox integration** - Secrets injected as environment variables at runtime
-- **Caddy ingress** - HTTP reverse proxy with automatic HTTPS
-- **Legacy workflows** - Binary publishing to DigitalOcean Spaces (still active)
+## Documentation
 
-## Migration Note
+- **[SETUP.md](./SETUP.md)** - Initial setup (Tailscale SSH + OIDC)
+- **[CLAUDE.md](./CLAUDE.md)** - Main docs for Claude Code assistant
+- **[SECRETS.md](./SECRETS.md)** - 1Password + fnox setup
 
-This repository was previously used for Nomad orchestration. All Nomad-related files have been archived to `archive/` for historical reference. The infrastructure now uses Docker Compose exclusively.
+## Service Workflow Example
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: go build -o my-service && tar -czf my-service.tgz my-service
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary
+          path: my-service.tgz
+
+  publish:
+    needs: build
+    uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
+    with:
+      artifact-name: "binary"
+      filename: "my-service.tgz"
+
+  deploy:
+    needs: publish
+    uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
+    with:
+      service: "my-service"
+      artifact: ${{ needs.publish.outputs.artifact }}
+```

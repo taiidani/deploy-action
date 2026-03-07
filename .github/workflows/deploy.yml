@@ -66,14 +66,7 @@ jobs:
           version: latest
           ping: ${{ env.DEPLOY_HOST }}
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+          ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
             "cd ${{ env.DEPLOY_PATH }} && mise run deploy ${{ inputs.service }} '${{ inputs.artifact }}'"
