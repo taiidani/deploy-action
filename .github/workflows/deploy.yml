@@ -66,6 +66,11 @@ jobs:
           version: latest
           ping: ${{ env.DEPLOY_HOST }}
 
+      - name: Add host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
       - name: Deploy
         run: |
           ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \

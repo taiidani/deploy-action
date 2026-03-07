@@ -45,6 +45,11 @@ jobs:
         with:
           name: ${{ inputs.artifact-name }}
 
+      - name: Add host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
       - name: upload
         id: upload
         run: |
