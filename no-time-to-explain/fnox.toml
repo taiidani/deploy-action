@@ -8,4 +8,3 @@ vault = "Development"
 "DISCORD_TOKEN"= { provider = "onepass", value = "no-time-to-explain Discord/token" }
 "DISCORD_CLIENT_ID"= { provider = "onepass", value = "no-time-to-explain Discord/username" }
 "DISCORD_CLIENT_SECRET"= { provider = "onepass", value = "no-time-to-explain Discord/credential" }
-"BUNGIE_API_KEY"= { provider = "onepass", value = "no-time-to-explain Bungie/credential" }
