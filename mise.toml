@@ -8,7 +8,6 @@ env_cache = true
 _.fnox-env = { tools = true }
 
 [tools]
-1password = "2.33.0-beta.02"
 fnox = "latest"
 
 [tasks.deploy]
