@@ -10,6 +10,9 @@ services:
     restart: unless-stopped
     ports:
       - 3502:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       SENTRY_ENVIRONMENT: "prod"
       SENTRY_DSN: "https://7fd4c058e6685608ada24d63281f6d59@o55858.ingest.us.sentry.io/4507279390539776"
@@ -19,7 +22,7 @@ services:
       DB_TYPE: "postgres"
       REDIS_HOST: redis.no-time-to-explain_default
       REDIS_PORT: "6379"
-      DATABASE_URL: "postgresql://${DATABASE_USER}:${DATABASE_PASS}@${DATABASE_HOST}:${DATABASE_PORT}/no-time-to-explain?sslmode=require"
+      DATABASE_URL: "postgresql://${DATABASE_USER}:${DATABASE_PASS}@postgres:5432/no-time-to-explain?sslmode=disable"
       DISCORD_TOKEN: "${DISCORD_TOKEN}"
       DISCORD_CLIENT_ID: "${DISCORD_CLIENT_ID}"
       DISCORD_CLIENT_SECRET: "${DISCORD_CLIENT_SECRET}"
@@ -28,6 +31,25 @@ services:
       # bot-stuff: https://discord.com/channels/570720951373922304/651857324658524181
       # bungie-tweets: https://discord.com/channels/570720951373922304/715987686678200320
       BLUESKY_FEED_CHANNEL_ID: "715987686678200320"
+
+  postgres:
+    image: postgres:17
+    user: "977:988"
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASS}
+      POSTGRES_DB: no-time-to-explain
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /mnt/storage/no-time-to-explain/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    shm_size: 256mb
 
   redis:
     image: redis:7

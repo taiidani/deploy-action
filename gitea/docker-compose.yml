@@ -1,16 +1,19 @@
 services:
   server:
     image: docker.gitea.com/gitea:1.25.3
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - USER_UID=1000
       - USER_GID=1000
       - GITEA__database__DB_TYPE=postgres
-      - GITEA__database__HOST=${DATABASE_HOST}:${DATABASE_PORT}
+      - GITEA__database__HOST=postgres:5432
       - GITEA__database__NAME=gitea
       - GITEA__database__USER=${DATABASE_USER}
       - GITEA__database__PASSWD=${DATABASE_PASS}
-      - GITEA__database__SSL=on
-    restart: unless-stopped
+      - GITEA__database__SSL_MODE=disable
     volumes:
       - ./data:/data
       - /etc/timezone:/etc/timezone:ro
@@ -18,3 +21,22 @@ services:
     ports:
       - "3000:3000"
       - "222:22"
+
+  postgres:
+    image: postgres:17
+    user: "977:988"
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASS}
+      POSTGRES_DB: gitea
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /mnt/storage/gitea/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    shm_size: 256mb
