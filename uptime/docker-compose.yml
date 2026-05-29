@@ -1,0 +1,50 @@
+name: tfc-agent
+
+services:
+  ryannixon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/uptime/latest.tgz}
+    restart: unless-stopped
+    environment:
+      DO_TOKEN: "${DO_TOKEN}"
+      DO_DOMAIN: "ryannixon.com"
+      DO_UPDATE_RECORDS: "home"
+
+  taiidani:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/uptime/latest.tgz}
+    restart: unless-stopped
+    environment:
+      DO_TOKEN: "${DO_TOKEN}"
+      DO_DOMAIN: "taiidani.com"
+      DO_UPDATE_RECORDS: "@,home"
+
+  ryannixon_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/uptime/latest.tgz}
+    restart: unless-stopped
+    environment:
+      DO_TOKEN: "${DO_TOKEN}"
+      DO_DOMAIN: "ryannixon.dev"
+      DO_UPDATE_RECORDS: "@"
+
+  guessmyword:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/uptime/latest.tgz}
+    restart: unless-stopped
+    environment:
+      DO_TOKEN: "${DO_TOKEN}"
+      DO_DOMAIN: "guessmyword.xyz"
+      DO_UPDATE_RECORDS: "@"
