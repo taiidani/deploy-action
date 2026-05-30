@@ -136,17 +136,22 @@ All deployment logic is defined in `mise.toml` for consistency between CI/CD and
 # Deploy with latest artifact (uses Dockerfile default)
 mise run deploy <service-name>
 
-# Deploy with specific artifact
-mise run deploy <service-name> https://example.com/artifact.gz
+# Deploy with specific local artifact
+mise run deploy <service-name> artifacts/my-service.tgz
+
+# Deploy by downloading artifact from GitHub Actions
+mise run deploy groceries --filename groceries.tgz
+mise run deploy groceries --filename groceries.tgz --run-id 12345678
 ```
 
-This task handles the full deployment:
-- Pulls latest git changes
+The `deploy` task:
+- Accepts a local artifact path as a positional arg, or downloads one from GitHub via `--filename` flags
+- Uses `gh run download` to fetch the artifact directly when `--filename` is provided
+- Stores downloaded artifacts in `<service>/artifacts/` (also copies to `latest.tgz`)
 - Injects secrets via fnox (automatically)
 - Deploys with `docker compose up -d --build --wait`
-- Shows status and logs
 
-**Note:** When no artifact is specified, the Dockerfile's default `ARG` points to the "latest" uploaded artifact for that service.
+**Note:** When no artifact is specified, the Dockerfile's default `ARG` points to a remote URL for that service.
 
 **Available Mise tasks:**
 ```bash
@@ -334,12 +339,11 @@ Caddy stores certificates and configuration in:
 
 ### Reusable Workflow
 
-**`.github/workflows/deploy.yml`** - Combined upload and deploy:
-- Downloads artifact from GitHub Actions
+**`.github/workflows/deploy.yml`** - Combined download and deploy:
 - Connects to home lab via Tailscale OIDC + SSH (zero secrets)
-- Uploads artifact to `<service>/artifacts/` on host
-- Executes: `mise run deploy <service> <artifact-path>`
-- Single workflow = one Tailscale connection, simpler security
+- Executes: `mise run deploy <service> --artifact-name <name> --filename <filename> --run-id <run-id>`
+- The host downloads the artifact directly from GitHub using `gh run download`
+- Single workflow = one Tailscale connection, no SCP needed
 
 ### Required Secrets
 

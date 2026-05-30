@@ -7,15 +7,16 @@ This document explains how to deploy services from their individual repositories
 **The Setup:**
 - Services run on your home lab host(s) at `/mnt/services`
 - Each service has a `compose.yml`, optional Dockerfile, and secrets
-- GitHub Actions connects via Tailscale + SSH to trigger deployments
-- Docker handles artifact downloads via Dockerfile `ADD` directives
+- GitHub Actions connects via Tailscale OIDC + SSH to trigger deployments
+- The host downloads artifacts directly from GitHub using `gh run download`
+- Docker builds from local artifacts via Dockerfile `ADD` directives
 
 **The Flow:**
-Service repo → Build artifact → Upload to S3 → Trigger deployment → SSH to terra → Mise deploys service → Docker downloads artifact during build → Service restarts
+Service repo → Build artifact → Upload to GitHub Actions → Trigger deployment → SSH to terra → Mise downloads artifact via `gh` → Docker builds from local artifact → Service restarts
 
 ## Deployment Workflow
 
-The deployment workflow requires an artifact URL. Here's the standard pattern for Go services:
+The deployment workflow uses GitHub Actions artifacts. Here's the standard pattern for Go services:
 
 ```yaml
 name: Deploy
@@ -33,68 +34,86 @@ jobs:
         with:
           go-version: '1.21'
       - name: Build binary
-        run: go build -o my-service
+        run: go build -o my-service && tar -czf my-service.tgz my-service
       - uses: actions/upload-artifact@v4
         with:
-          name: binary
-          path: my-service
-
-  publish:
-    needs: build
-    uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
-    with:
-      artifact-name: "binary"
-      filename: "my-service"
+          name: artifact
+          path: my-service.tgz
 
   deploy:
-    needs: publish
+    needs: build
     uses: taiidani/deploy-action/.github/workflows/deploy.yml@main
     with:
-      service: "my-service"
-      artifact: ${{ needs.publish.outputs.artifact }}
+      artifact-name: "artifact"
+      filename: "my-service.tgz"
 ```
 
 **Note:** Secrets are automatically injected by fnox when the deployment runs. See the Secrets Management section below.
 
 ## How Artifact Downloads Work
 
-The workflow passes the artifact URL as the `ARTIFACT` build argument to Docker Compose. Your Dockerfile uses Docker's `ADD` directive with a default value:
+The reusable workflow SSHs into the deploy host and runs:
+```bash
+mise run deploy <service> --artifact-name <name> --filename <filename> --run-id <run-id>
+```
 
+This task:
+1. Uses `gh run download` to fetch the artifact from GitHub Actions
+2. Stores it in `<service>/artifacts/<filename>` (and copies to `latest.tgz`)
+3. Passes `ARTIFACT=artifacts/<filename>` to Docker Compose
+4. Docker's `ADD --unpack` extracts the local tarball into the image
+
+**Dockerfile pattern:**
 ```dockerfile
 FROM scratch
-ARG ARTIFACT=https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/my-service/latest
+ARG ARTIFACT
 ADD --unpack ${ARTIFACT} /app/
 CMD ["/app/my-service"]
 ```
 
-**How this works:**
-- CI/CD always passes the specific artifact URL (e.g., `my-service-2024.01.15.tgz`)
-- Local development omits the artifact arg, so Docker uses the default "latest.tgz"
-- The publish workflow uploads both the versioned file AND a "latest.tgz" copy
-- `ADD --unpack` automatically downloads and extracts gzipped tarballs
+**compose.yml pattern:**
+```yaml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTIFACT: ${ARTIFACT:-https://fallback-url.example.com/latest.tgz}
+```
+
+The `ARTIFACT` default in `compose.yml` provides a fallback URL for local development when no artifact is specified.
 
 ## What Happens During Deployment
 
 When the workflow runs:
 
-1. **Connect**: Tailscale + SSH to terra
-2. **Execute**: `cd /mnt/services && mise run deploy <service> <artifact-url>`
+1. **Connect**: Tailscale OIDC + SSH to terra (zero secrets needed in GitHub)
+2. **Execute**: `cd /mnt/services && mise run deploy <service> --filename <filename> --run-id <run-id>`
 
-The Mise task handles:
-- Pulling latest configurations from git
+The `deploy` Mise task handles:
+- Downloading the artifact from GitHub via `gh run download`
+- Storing it locally in the service's `artifacts/` directory
 - Injecting secrets via fnox (automatically)
 - Building/starting the service with Docker Compose
-- Showing deployment status and logs
+- Showing deployment status
 
-**You can run the same command locally:**
+**You can run the same commands locally:**
 ```bash
 # On terra or locally with the repo
 cd /mnt/services
+
+# Deploy without artifact (uses Dockerfile default fallback URL)
 mise run deploy groceries
-mise run deploy groceries https://example.com/binary.gz
+
+# Deploy with a local artifact
+mise run deploy groceries artifacts/groceries.tgz
+
+# Deploy by downloading from GitHub Actions
+mise run deploy groceries --filename groceries.tgz --run-id 12345678
 ```
 
-This approach means the deployment logic lives in `.mise.toml`, not scattered across GitHub Actions.
+This approach means the deployment logic lives in `mise.toml`, not scattered across GitHub Actions.
 
 ## Service Setup in /mnt/services
 
@@ -106,13 +125,14 @@ For a service to be deployable:
    └── my-service/
        ├── compose.yml
        ├── Dockerfile (if building custom image)
+       ├── artifacts/ (created automatically by deploy)
        └── fnox.toml (if service needs secrets)
    ```
 
-2. **Dockerfile that accepts ARTIFACT arg with default:**
+2. **Dockerfile that accepts ARTIFACT arg:**
    ```dockerfile
    FROM scratch
-   ARG ARTIFACT=https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/my-service/latest.tgz
+   ARG ARTIFACT
    ADD --unpack ${ARTIFACT} /app/
    CMD ["/app/my-service"]
    ```
@@ -121,12 +141,12 @@ For a service to be deployable:
    ```dockerfile
    FROM alpine:latest
    RUN apk --no-cache add ca-certificates
-   ARG ARTIFACT=https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/my-service/latest.tgz
+   ARG ARTIFACT
    ADD --unpack ${ARTIFACT} /app/
    CMD ["/app/my-service"]
    ```
 
-3. **compose.yml:**
+3. **compose.yml with ARTIFACT arg and fallback:**
    ```yaml
    services:
      app:
@@ -134,7 +154,7 @@ For a service to be deployable:
          context: .
          dockerfile: Dockerfile
          args:
-           ARTIFACT: ${ARTIFACT}
+           ARTIFACT: ${ARTIFACT:-https://fallback-url.example.com/latest.tgz}
        restart: unless-stopped
        ports:
          - 3000:3000
@@ -142,7 +162,7 @@ For a service to be deployable:
          DATABASE_URL: "${DATABASE_URL}"
    ```
    
-   The `args: ARTIFACT: ${ARTIFACT}` passes the environment variable to the Dockerfile's `ARG`.
+   The `args: ARTIFACT: ${ARTIFACT:-<fallback>}` allows both CI (explicit path) and local dev (default URL) usage.
 
 4. **1Password secrets (if needed):**
    - Add secrets to 1Password "Development" vault (create an item for the service)
@@ -165,30 +185,23 @@ For a service to be deployable:
 
 ## Required Secrets
 
-**1Password "Development" Vault:**
-- Service-specific items with credentials (e.g., "my-service Discord Bot")
-- Database credentials (referenced in root `fnox.toml`)
-
-**mise.local.toml (on host):**
+**On host (`mise.local.toml`):**
 ```toml
 [env]
 OP_SERVICE_ACCOUNT_TOKEN = "ops_eyJ..."
 ```
 
-**GitHub Environments (in this repository):**
-- `publish` environment:
-  - `AWS_ACCESS_KEY_ID` - DigitalOcean Spaces access key
-  - `AWS_SECRET_ACCESS_KEY` - DigitalOcean Spaces secret key
-- `production` environment (and optional `staging`, `dev`, etc.):
-  - `TAILSCALE_OAUTH_CLIENT_ID` - For Tailscale connection to home lab
-  - `TAILSCALE_OAUTH_SECRET` - For Tailscale connection to home lab
-  - `DEPLOY_SSH_KEY` - SSH private key for connecting to terra
+**On host:** `gh` CLI authenticated (for `gh run download`)
+
+**GitHub:** Zero secrets required! 🎉
+- Tailscale uses OIDC (client ID and audience hardcoded in workflow, not secrets)
+- SSH uses Tailscale SSH (no SSH keys to manage)
 
 ## Troubleshooting
 
 ### Deployment fails with "Permission denied"
-- Check that `DEPLOY_SSH_KEY` is configured in GitHub Secrets
-- Verify the SSH key is authorized on host: `~/.ssh/authorized_keys`
+- Verify Tailscale SSH is configured correctly for the deploy host
+- Check that the `tag:ci` ACL tag has SSH access to the host
 
 ### Service fails to start
 - SSH into host and check logs: `cd /mnt/services/my-service && docker compose logs`
@@ -196,9 +209,10 @@ OP_SERVICE_ACCOUNT_TOKEN = "ops_eyJ..."
 - Check if service is using correct ports (no conflicts)
 
 ### Artifact download fails
-- Verify artifact was uploaded to DigitalOcean Spaces
-- Check the artifact URL is publicly accessible
-- Test manually: `docker build --build-arg ARTIFACT=<url> .`
+- Verify the `gh` CLI is authenticated on the host: `gh auth status`
+- Check that the run ID is valid and the artifact hasn't expired (90 day retention)
+- Verify the artifact name matches: `gh run view <run-id> --repo <owner/repo>`
+- Test manually: `gh run download <run-id> --repo <owner/repo> --name <artifact-name> --dir ./test/`
 
 ### Secrets not available
 - Verify `fnox.toml` exists in the service directory
@@ -219,31 +233,38 @@ Use the same Mise task that GitHub Actions uses:
 ```bash
 cd /mnt/services
 
-# Deploy with latest artifact (Dockerfile default)
+# Deploy with latest artifact (Dockerfile default fallback)
 mise run deploy my-service
 
-# Deploy with specific artifact
-mise run deploy my-service https://example.com/my-binary.gz
-```
+# Deploy with a specific local artifact
+mise run deploy my-service artifacts/my-service.tgz
 
-The first command (without artifact URL) uses the Dockerfile's default `ARG`, which points to the "latest" uploaded artifact.
+# Download and deploy from GitHub
+mise run deploy my-service --filename my-service.tgz
+```
 
 **Manual Docker Compose:**
 You can also work with Docker Compose directly:
 ```bash
 cd /mnt/services/my-service
-ARTIFACT=https://example.com/my-binary docker compose up -d --build --wait
+ARTIFACT=artifacts/latest.tgz docker compose up -d --build --wait
 docker compose logs -f
 ```
 
 **Dockerfile Best Practices:**
-- Use `ARG ARTIFACT=...` with a default pointing to "latest.tgz"
-- Use `ADD --unpack` for automatic download and extraction
+- Use `ARG ARTIFACT` (no default in Dockerfile — let compose.yml handle the fallback)
+- Use `ADD --unpack` for automatic extraction of tarballs
 - Use `FROM scratch` for minimal image size (Go binaries)
 - Use `FROM alpine:latest` if you need CA certificates
-- The "latest.tgz" artifact is updated by the publish workflow on every push
+- The `latest.tgz` copy is maintained by the `deploy` task
 
 **Workflow Concurrency:**
-- Deployments use `concurrency: group: deploy-${{ service }}` 
+- Deployments use `concurrency: group: deploy-${{ github.repository }}`
 - Only one deployment per service runs at a time
-- New deployments wait for previous ones to complete
+- New deployments cancel-in-progress: false (wait for previous to complete)
+
+**Prerequisites on Deploy Host:**
+- `mise` installed with tools configured (`gh`, `fnox`)
+- `gh` CLI authenticated: `gh auth login`
+- `docker` and `docker compose` available
+- 1Password service account token in `mise.local.toml`

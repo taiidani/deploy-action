@@ -73,35 +73,11 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Download artifact
-        uses: actions/download-artifact@v7
-        with:
-          name: ${{ inputs.artifact-name }}
-
-      - name: Upload artifact to host
-        id: upload
+      - name: Deploy service
         run: |
           # Extract service name from repository (e.g., "taiidani/groceries" -> "groceries")
           SERVICE="${{ github.repository }}"
           SERVICE="${SERVICE##*/}"
 
-          # Create service artifact directory on deploy host
           ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
-            "mkdir -p ${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts"
-
-          # Upload with full filename
-          scp ./${{ inputs.filename }} \
-            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts/${{ inputs.filename }}
-
-          # Also upload as "latest.tgz" for local development convenience
-          scp ./${{ inputs.filename }} \
-            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/${SERVICE}/artifacts/latest.tgz
-
-          # Set service name and artifact path for deploy step
-          echo "service=${SERVICE}" >> "$GITHUB_OUTPUT"
-          echo "artifact=artifacts/${{ inputs.filename }}" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy service
-        run: |
-          ssh ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
-            "cd ${{ env.DEPLOY_PATH }} && mise run deploy ${{ steps.upload.outputs.service }} '${{ steps.upload.outputs.artifact }}'"
+            "cd ${{ env.DEPLOY_PATH }} && mise run deploy '${SERVICE}' --artifact-name '${{ inputs.artifact-name }}' --filename '${{ inputs.filename }}' --run-id '${{ github.run_id }}'"
