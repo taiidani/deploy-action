@@ -7,3 +7,6 @@ vault = "Development"
 [secrets]
 "DATABASE_USER"= { provider = "onepass", value = "Postgres/username" }
 "DATABASE_PASS"= { provider = "onepass", value = "Postgres/password" }
+
+# Used by `uptime` to authenticate with DigitalOcean API for DNS updates, etc.
+"DO_TOKEN"= { provider = "onepass", value = "DigitalOcean/credential" }
