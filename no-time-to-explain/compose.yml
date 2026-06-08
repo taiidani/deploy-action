@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/no-time-to-explain/latest.tgz}
+        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
     restart: unless-stopped
     ports:
       - 3502:3000
@@ -23,9 +23,9 @@ services:
       REDIS_HOST: redis.no-time-to-explain_default
       REDIS_PORT: "6379"
       DATABASE_URL: "postgresql://${DATABASE_USER}:${DATABASE_PASS}@postgres:5432/no-time-to-explain?sslmode=disable"
-      DISCORD_TOKEN: "${DISCORD_TOKEN}"
-      DISCORD_CLIENT_ID: "${DISCORD_CLIENT_ID}"
-      DISCORD_CLIENT_SECRET: "${DISCORD_CLIENT_SECRET}"
+      DISCORD_TOKEN: "${NTTE_DISCORD_TOKEN}"
+      DISCORD_CLIENT_ID: "${NTTE_DISCORD_CLIENT_ID}"
+      DISCORD_CLIENT_SECRET: "${NTTE_DISCORD_CLIENT_SECRET}"
 
       # no-time-to-explain: https://discord.com/channels/372591705754566656/1341142254902837380
       # bot-stuff: https://discord.com/channels/570720951373922304/651857324658524181

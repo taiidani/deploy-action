@@ -8,5 +8,19 @@ vault = "Development"
 "DATABASE_USER"= { provider = "onepass", value = "Postgres/username" }
 "DATABASE_PASS"= { provider = "onepass", value = "Postgres/password" }
 
-# Used by `uptime` to authenticate with DigitalOcean API for DNS updates, etc.
+# Uptime
 "DO_TOKEN"= { provider = "onepass", value = "DigitalOcean/credential" }
+
+# Lil Dumpster
+"LIL_DUMPSTER_DISCORD_TOKEN"= { provider = "onepass", value = "lil-dumpster Discord Token/credential" }
+
+# No Time To Explain
+"NTTE_DISCORD_TOKEN"= { provider = "onepass", value = "no-time-to-explain Discord/token" }
+"NTTE_DISCORD_CLIENT_ID"= { provider = "onepass", value = "no-time-to-explain Discord/username" }
+"NTTE_DISCORD_CLIENT_SECRET"= { provider = "onepass", value = "no-time-to-explain Discord/credential" }
+
+# Servarr
+"WIREGUARD_PRIVATE_KEY"= { provider = "onepass", value = "servarr wireguard private key/credential" }
+
+# TFC Agent
+"TFC_AGENT_TOKEN"= { provider = "onepass", value = "tfc-agent/credential" }

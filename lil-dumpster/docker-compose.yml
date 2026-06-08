@@ -9,7 +9,7 @@ services:
     environment:
       REDIS_HOST: redis.lil-dumpster_default
       REDIS_PORT: 6379
-      DISCORD_TOKEN: "${DISCORD_TOKEN}"
+      DISCORD_TOKEN: "${LIL_DUMPSTER_DISCORD_TOKEN}"
 
   redis:
     image: redis:6
