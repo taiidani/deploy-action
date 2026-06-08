@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/uptime/latest.tgz}
+        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
     restart: unless-stopped
     environment:
       DO_TOKEN: "${DO_TOKEN}"
@@ -16,7 +16,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/uptime/latest.tgz}
+        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
     restart: unless-stopped
     environment:
       DO_TOKEN: "${DO_TOKEN}"
@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/uptime/latest.tgz}
+        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
     restart: unless-stopped
     environment:
       DO_TOKEN: "${DO_TOKEN}"
@@ -40,7 +40,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ARTIFACT: ${ARTIFACT:-https://rnd-public.sfo3.digitaloceanspaces.com/taiidani/uptime/latest.tgz}
+        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
     restart: unless-stopped
     environment:
       DO_TOKEN: "${DO_TOKEN}"
