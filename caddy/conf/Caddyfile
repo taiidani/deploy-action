@@ -57,3 +57,9 @@ guessmyword.xyz {
     to 192.168.102.5:3500
   }
 }
+
+deploy.taiidani.com {
+  reverse_proxy {
+    to 192.168.102.5:3201
+  }
+}
