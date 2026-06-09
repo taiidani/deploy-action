@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/deployer
+ExecStart=/mnt/services/deployer/deployer
 Restart=on-failure
 RestartSec=5s
 
