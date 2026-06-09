@@ -7,6 +7,7 @@ vault = "Development"
 [secrets]
 "DATABASE_USER"= { provider = "onepass", value = "Postgres/username" }
 "DATABASE_PASS"= { provider = "onepass", value = "Postgres/password" }
+"GITHUB_WEBHOOK_SECRET"= { provider = "onepass", value = "GitHub Deployer App/webhook secret key" }
 
 # Uptime
 "DO_TOKEN"= { provider = "onepass", value = "DigitalOcean/credential" }
