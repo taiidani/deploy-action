@@ -10,6 +10,7 @@ _.fnox-env = { tools = true }
 [tools]
 fnox = "latest"
 gh = "latest"
+go = "latest"
 
 [tasks.deploy]
 description = "Deploy a service, optionally downloading an artifact from GitHub Actions"
