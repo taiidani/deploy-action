@@ -1,0 +1,17 @@
+services:
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    restart: unless-stopped
+    privileged: true
+    # Internal cAdvisor port is 8080; mapped to 8081 on the host to avoid
+    # colliding with qBittorrent (8080) on hosts running the servarr stack.
+    ports:
+      - "8081:8080"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+      - "/dev/disk/:/dev/disk:ro"
+    devices:
+      - /dev/kmsg

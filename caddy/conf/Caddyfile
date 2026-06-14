@@ -12,21 +12,15 @@
   # }
 }
 
-# taiidani.com {
-#   reverse_proxy {
-#     {{- range nomadService "homer" }}
-#     to {{ .Address }}:{{ .Port }}
-#     {{- end }}
-#   }
-# }
+taiidani.com {
+  reverse_proxy {
+    to 192.168.102.5:3900
+  }
+}
 
-# www.taiidani.com {
-#   reverse_proxy {
-#     {{- range nomadService "homer" }}
-#     to {{ .Address }}:{{ .Port }}
-#     {{- end }}
-#   }
-# }
+www.taiidani.com {
+  redir https:/taiidani.com permanent
+}
 
 groceries.taiidani.com {
   reverse_proxy {

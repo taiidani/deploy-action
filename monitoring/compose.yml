@@ -1,0 +1,40 @@
+services:
+  grafana:
+    image: grafana/grafana-enterprise
+    restart: unless-stopped
+    environment:
+      - GF_SERVER_ROOT_URL=https://taiidani.com/
+    ports:
+      - "3900:3000"
+    volumes:
+      - "./data/grafana:/var/lib/grafana"
+      - "./provisioning:/etc/grafana/provisioning"
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+    volumes:
+      - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "./data/prometheus:/prometheus"
+    ports:
+      - "9095:9090"
+
+  # --- Logs (next phase) ---------------------------------------------------
+  # Uncomment to add Loki for log aggregation. Pair it with Promtail or
+  # Grafana Alloy on each host to ship Docker logs here, then enable the Loki
+  # datasource in provisioning/datasources/datasources.yml.
+  #
+  # loki:
+  #   image: grafana/loki
+  #   restart: unless-stopped
+  #   command: -config.file=/etc/loki/local-config.yaml
+  #   volumes:
+  #     - "./data/loki:/loki"
+  #   ports:
+  #     - "3100:3100"

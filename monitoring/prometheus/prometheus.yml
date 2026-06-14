@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus scraping itself.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Host metrics (CPU, memory, disk, network) from node_exporter.
+  # Installed on each host via: dnf install golang-github-prometheus-node-exporter
+  - job_name: node
+    static_configs:
+      - targets:
+          - "192.168.102.5:9100" # terra
+          - "192.168.102.4:9100" # obsidian
+
+  # Per-container metrics from cAdvisor (see the cadvisor/ stack).
+  # Mapped to host port 8081 to avoid colliding with qBittorrent on 8080.
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+          - "192.168.102.5:8081" # terra
+          - "192.168.102.4:8081" # obsidian

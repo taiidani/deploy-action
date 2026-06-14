@@ -18,13 +18,14 @@ This repository contains deployment configurations for taiidani's home lab. All 
 Each service has its own directory containing a `compose.yml` or `docker-compose.yml` file. Services are deployed and managed independently on the home lab host.
 
 **Active Services:**
-- `beszel/` - System monitoring service
+- `cadvisor/` - Per-host container metrics exporter (deployed on each host)
 - `caddy/` - HTTP reverse proxy and ingress
 - `gitea/` - Self-hosted Git service
 - `groceries/` - Grocery list web app with Redis
 - `guess-my-word/` - Word guessing game
 - `homepage/` - Dashboard homepage
 - `lil-dumpster/` - Discord bot with Redis
+- `monitoring/` - Grafana + Prometheus observability stack
 - `no-time-to-explain/` - Destiny 2 Discord bot with Redis
 - `plex/` - Media server
 - `redis/` - Standalone Redis instance
