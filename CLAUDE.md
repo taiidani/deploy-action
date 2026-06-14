@@ -18,6 +18,7 @@ This repository contains deployment configurations for taiidani's home lab. All 
 Each service has its own directory containing a `compose.yml` or `docker-compose.yml` file. Services are deployed and managed independently on the home lab host.
 
 **Active Services:**
+- `alloy/` - Per-host log shipper (Grafana Alloy, deployed on each host)
 - `cadvisor/` - Per-host container metrics exporter (deployed on each host)
 - `caddy/` - HTTP reverse proxy and ingress
 - `gitea/` - Self-hosted Git service

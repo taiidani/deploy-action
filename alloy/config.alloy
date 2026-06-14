@@ -1,0 +1,35 @@
+// Discover all containers on this host via the Docker socket.
+discovery.docker "containers" {
+	host = "unix:///var/run/docker.sock"
+}
+
+// Turn the Docker container name (e.g. "/groceries-app-1") into a clean
+// "container" label (e.g. "groceries-app-1").
+discovery.relabel "containers" {
+	targets = discovery.docker.containers.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
+	}
+}
+
+// Tail each discovered container's logs and forward them to Loki.
+loki.source.docker "containers" {
+	host       = "unix:///var/run/docker.sock"
+	targets    = discovery.relabel.containers.output
+	forward_to = [loki.write.default.receiver]
+}
+
+// Ship logs to the central Loki on terra. constants.hostname keeps this file
+// identical on every host while still labeling logs by their source machine.
+loki.write "default" {
+	endpoint {
+		url = "http://192.168.102.5:3100/loki/api/v1/push"
+	}
+
+	external_labels = {
+		host = constants.hostname,
+	}
+}

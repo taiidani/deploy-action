@@ -25,16 +25,14 @@ services:
     ports:
       - "9095:9090"
 
-  # --- Logs (next phase) ---------------------------------------------------
-  # Uncomment to add Loki for log aggregation. Pair it with Promtail or
-  # Grafana Alloy on each host to ship Docker logs here, then enable the Loki
-  # datasource in provisioning/datasources/datasources.yml.
-  #
-  # loki:
-  #   image: grafana/loki
-  #   restart: unless-stopped
-  #   command: -config.file=/etc/loki/local-config.yaml
-  #   volumes:
-  #     - "./data/loki:/loki"
-  #   ports:
-  #     - "3100:3100"
+  # Log aggregation. Per-host Grafana Alloy agents (see ../alloy/) push Docker
+  # container logs here. LAN-only (port 3100) so off-host agents can reach it.
+  loki:
+    image: grafana/loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - "./loki/loki-config.yml:/etc/loki/loki-config.yml:ro"
+      - "./data/loki:/loki"
+    ports:
+      - "3100:3100"

@@ -8,10 +8,9 @@ datasources:
     isDefault: true
     editable: false
 
-  # --- Logs (next phase) ---
-  # Enable alongside the Loki service in compose.yml.
-  # - name: Loki
-  #   type: loki
-  #   access: proxy
-  #   url: http://loki:3100
-  #   editable: false
+  # --- Logs ---
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
