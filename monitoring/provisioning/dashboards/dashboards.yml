@@ -1,0 +1,15 @@
+apiVersion: 1
+
+providers:
+  - name: home-lab
+    orgId: 1
+    folder: Home Lab
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      # Path is inside the container; ./provisioning is mounted to
+      # /etc/grafana/provisioning by monitoring/compose.yml.
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false

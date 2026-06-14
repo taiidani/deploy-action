@@ -78,9 +78,19 @@ Log shipping needs no central change — Alloy auto-registers by pushing to Loki
 
 ## First dashboard
 
-Once Prometheus is scraping, import the community **Node Exporter Full**
-dashboard (ID `1860`) in Grafana via *Dashboards → New → Import*. It gives a
-rich host overview out of the box.
+A **Home Lab Overview** dashboard is provisioned as code (host CPU/memory/disk,
+top container CPU, and a live logs panel). It loads automatically into the *Home
+Lab* folder in Grafana — it's defined by:
+
+- `provisioning/dashboards/dashboards.yml` — the file provider
+- `provisioning/dashboards/json/home-lab-overview.json` — the dashboard
+
+Edit the JSON and Grafana picks up changes within ~30s. The panels reference the
+datasources by their fixed UIDs (`prometheus`, `loki`) set in
+`provisioning/datasources/datasources.yml`, so they resolve on a fresh install.
+
+For a deeper host view, also import the community **Node Exporter Full**
+dashboard (ID `1860`) via *Dashboards → New → Import*.
 
 For logs, use *Explore → Loki* and a LogQL query like `{host="terra"}` or
 `{container="groceries-app-1"}` to start.
