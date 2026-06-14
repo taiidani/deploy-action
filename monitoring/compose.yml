@@ -4,6 +4,8 @@ services:
     restart: unless-stopped
     environment:
       - GF_SERVER_ROOT_URL=https://taiidani.com/
+      # Consumed by alerting provisioning (provisioning/alerting/contactpoints.yml).
+      - DISCORD_WEBHOOK_URL=${GRAFANA_DISCORD_WEBHOOK}
     ports:
       - "3900:3000"
     volumes:

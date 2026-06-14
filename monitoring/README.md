@@ -101,3 +101,29 @@ Loki runs in this stack (LAN-only, port 3100) with 30-day retention configured
 in `loki/loki-config.yml`. Log collection is handled by the per-host `alloy/`
 stack (see above). The Loki datasource is provisioned as code in
 `provisioning/datasources/datasources.yml`.
+
+## Alerting (Discord)
+
+Alerting is provisioned as code under `provisioning/alerting/`:
+
+- `rules.yml` — alert rules (in the *Alerts* folder): **Host Down** (`up < 1`,
+  5m), **Root Disk > 85%** (10m), **Memory > 90%** (10m).
+- `contactpoints.yml` — a **Discord** contact point. Its webhook URL is read
+  from the `DISCORD_WEBHOOK_URL` env var (Grafana interpolates `$DISCORD_WEBHOOK_URL`
+  at startup), which `compose.yml` populates from the `GRAFANA_DISCORD_WEBHOOK`
+  secret injected by fnox.
+- `policies.yml` — routes all alerts to the Discord contact point.
+
+### Required secret
+
+Store the Discord webhook URL in 1Password ("Development" vault) as item
+**Grafana Alerting Discord**, field **webhook**. It's wired up in the repo-root
+`fnox.toml` as `GRAFANA_DISCORD_WEBHOOK`. Without it, the contact point's URL
+provisions empty and Grafana will fail to start — so add the secret before
+bringing the stack up.
+
+To create the webhook in Discord: *Server Settings → Integrations → Webhooks →
+New Webhook*, pick a channel, and copy the URL.
+
+Provisioned alerting resources are read-only in the UI; edit the YAML and
+restart Grafana (or hot-reload via the Admin API) to change them.

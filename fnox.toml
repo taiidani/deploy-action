@@ -25,3 +25,6 @@ vault = "Development"
 
 # TFC Agent
 "TFC_AGENT_TOKEN"= { provider = "onepass", value = "tfc-agent/credential" }
+
+# Grafana Alerting
+"GRAFANA_DISCORD_WEBHOOK"= { provider = "onepass", value = "Grafana Alerting Discord/webhook" }
