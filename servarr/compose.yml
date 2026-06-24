@@ -11,7 +11,7 @@ services:
       - WEBUI_PORTS=7878/tcp
     volumes:
       - ./data/radarr:/config
-      - /mnt/storage/content:/data
+      - nfs_content:/data
       - ./data/downloads:/downloads
 
   sonarr:
@@ -26,7 +26,7 @@ services:
       - WEBUI_PORTS=8989/tcp
     volumes:
       - ./data/sonarr:/config
-      - /mnt/storage/content:/data
+      - nfs_content:/data
       - ./data/downloads:/downloads
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
@@ -82,3 +82,11 @@ services:
       - WEBUI_PORTS=9696/tcp
     volumes:
       - ./data/prowlarr:/config
+
+volumes:
+  nfs_content:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=192.168.102.3,nfsvers=3,proto=tcp,nconnect=4,rsize=1048576,wsize=1048576,noatime,hard,timeo=100,retrans=3"
+      device: ":/var/nfs/shared/Storage/content"
