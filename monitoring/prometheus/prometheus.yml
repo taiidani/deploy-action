@@ -14,7 +14,7 @@ scrape_configs:
     static_configs:
       - targets:
           - "192.168.102.5:9100" # terra
-          - "192.168.102.4:9100" # obsidian
+          - "192.168.102.143:9100" # arr
 
   # Per-container metrics from cAdvisor (see the cadvisor/ stack).
   # Mapped to host port 8081 to avoid colliding with qBittorrent on 8080.
@@ -22,4 +22,4 @@ scrape_configs:
     static_configs:
       - targets:
           - "192.168.102.5:8081" # terra
-          - "192.168.102.4:8081" # obsidian
+          - "192.168.102.143:8081" # arr
