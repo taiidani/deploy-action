@@ -80,7 +80,7 @@ Traffic arrives via Caddy reverse proxy at `deploy.taiidani.com`:
 ```
 deploy.taiidani.com {
   reverse_proxy {
-    to 192.168.102.5:3201
+    to 192.168.102.80:3201
   }
 }
 ```

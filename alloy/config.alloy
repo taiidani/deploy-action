@@ -26,7 +26,7 @@ loki.source.docker "containers" {
 // identical on every host while still labeling logs by their source machine.
 loki.write "default" {
 	endpoint {
-		url = "http://192.168.102.5:3100/loki/api/v1/push"
+		url = "http://192.168.102.42:3100/loki/api/v1/push"
 	}
 
 	external_labels = {

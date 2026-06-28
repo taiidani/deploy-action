@@ -83,7 +83,7 @@ Services are accessed via subdomains and reverse proxied to internal ports:
 ```
 groceries.taiidani.com {
   reverse_proxy {
-    to 192.168.102.5:3501
+    to 192.168.102.80:3501
   }
 }
 ```
@@ -121,7 +121,7 @@ services:
 **Service Discovery:**
 Services discover each other using Docker's internal DNS:
 - Format: `<service>.<project>_default` (e.g., `redis.groceries_default`)
-- External services use static IPs (e.g., `192.168.102.5`)
+- External services use static IPs (e.g., `192.168.102.80`)
 
 **Environment Variables:**
 
@@ -278,7 +278,7 @@ docker compose logs -f
    ```
    <service>.taiidani.com {
      reverse_proxy {
-       to 192.168.102.5:<port>
+       to 192.168.102.80:<port>
      }
    }
    ```

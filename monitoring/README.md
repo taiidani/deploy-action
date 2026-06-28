@@ -61,7 +61,7 @@ docker compose up -d
 ```
 
 Each Alloy agent discovers local containers via the Docker socket and pushes
-their logs to the central Loki on `terra` (`192.168.102.5:3100`). Logs are
+their logs to the central Loki on `terra` (`192.168.102.42:3100`). Logs are
 labeled with `container` and `host` (the machine hostname), so you can filter by
 either in Grafana. Alloy's debug UI is at `http://<host>:12345`.
 
