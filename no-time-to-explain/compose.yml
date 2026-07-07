@@ -53,7 +53,7 @@ services:
     shm_size: 256mb
 
   redis:
-    image: redis:7
+    image: redis:8
     restart: unless-stopped
     healthcheck:
       test: redis-cli ping || exit 1
