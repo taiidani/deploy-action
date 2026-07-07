@@ -2,11 +2,7 @@ name: groceries
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
+    image: taiidani/groceries:latest
     restart: unless-stopped
     ports:
       - 3501:3000

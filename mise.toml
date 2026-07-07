@@ -1,76 +1,28 @@
-[plugins]
-fnox-env = "https://github.com/jdx/mise-env-fnox"
-
-[settings]
-env_cache = true
-
-[env]
-_.fnox-env = { tools = true }
-
 [tools]
 fnox = "latest"
 gh = "latest"
+"github:taiidani/groceries" = "latest"
 go = "latest"
 
 [tasks.deploy]
-description = "Deploy a service, optionally downloading an artifact from GitHub Actions"
+description = "Deploy a service"
 usage = '''
 arg "<service>" help="Service name to deploy"
-arg "[artifact]" help="Local artifact path (skips GitHub download)"
-flag "--artifact-name <artifact_name>" help="Name of the GitHub Actions artifact" default="artifact"
-flag "--filename <filename>" help="Filename within the artifact (e.g. groceries.tgz)"
-flag "--run-id <run_id>" help="GitHub Actions run ID (defaults to most recent)"
 '''
 run = """
 #!/usr/bin/env bash
 set -e
 
-REPO="taiidani/${usage_service?}"
+echo "📦 Staging service: ${usage_service?}"
+mkdir -p artifacts
+cp -f $(which ${usage_service?}) artifacts/${usage_service?}
+
+echo "🏗️ Building service: ${usage_service?}"
+docker build -t taiidani/${usage_service?} --build-arg NAME=${usage_service?} .
 
 echo "🚀 Deploying service: ${usage_service?}"
-
-# Navigate to service directory
-cd "${usage_service?}"
-
-# Determine artifact source
-if [ -n "${usage_artifact:-}" ]; then
-  # Local artifact path provided directly
-  echo "📦 Using local artifact: ${usage_artifact?}"
-  ARTIFACT="${usage_artifact?}"
-
-elif [ -n "${usage_filename:-}" ]; then
-  # Download from GitHub Actions
-  echo "📡 Downloading artifact from GitHub: ${REPO}"
-
-  mkdir -p artifacts
-
-  if [ -n "${usage_run_id:-}" ]; then
-    echo "   Run ID: ${usage_run_id?}"
-    gh run download "${usage_run_id?}" --repo "${REPO}" --name "${usage_artifact_name?}" --dir artifacts/
-  else
-    echo "   Using most recent successful run"
-    gh run download --repo "${REPO}" --name "${usage_artifact_name?}" --dir artifacts/
-  fi
-
-  if [ ! -f "artifacts/${usage_filename?}" ]; then
-    echo "❌ Expected file not found: artifacts/${usage_filename?}"
-    echo "   Contents of artifacts/:"
-    ls -la artifacts/
-    exit 1
-  fi
-
-  cp "artifacts/${usage_filename?}" artifacts/latest.tgz
-  ARTIFACT="artifacts/${usage_filename?}"
-fi
-
-# Deploy
-if [ -n "${ARTIFACT:-}" ]; then
-  echo "📦 Deploying with artifact: ${ARTIFACT}"
-  ARTIFACT="${ARTIFACT}" docker compose up -d --build --wait
-else
-  echo "📦 Deploying without artifact..."
-  docker compose up -d --build --wait
-fi
+cd ${usage_service?}
+fnox exec -- docker compose up -d --build --wait
 
 # Show status
 echo ""
