@@ -22,10 +22,10 @@ docker build -t taiidani/${usage_service?} --build-arg NAME=${usage_service?} .
 
 echo "🚀 Deploying service: ${usage_service?}"
 cd ${usage_service?}
-fnox exec -- docker compose up -d --build --wait
+fnox exec --if-missing=error -- docker compose up -d --build --wait
 
 # Show status
 echo ""
 echo "✅ Deployment complete!"
-docker compose ps
+fnox exec --if-missing=error -- docker compose ps
 """

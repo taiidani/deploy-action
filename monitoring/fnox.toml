@@ -1,0 +1,8 @@
+default_provider = "onepass"
+
+[providers.onepass]
+type = "1password"
+vault = "Development"
+
+[secrets]
+"GRAFANA_DISCORD_WEBHOOK"= { provider = "onepass", value = "Grafana Alerting Discord/webhook" }
