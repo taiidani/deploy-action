@@ -1,9 +1,21 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: docker-compose
+    directories:
+      - /caddy
+      - /alloy
+      - /cadvisor
+      - /gitea
+      - /groceries
+      - /guess-my-word
+      - /homepage
+      - /immich
+      - /lil-dumpster
+      - /monitoring
+      - /no-time-to-explain
+      - /plex
+      - /redis
+      - /servarr
+      - /tfc-agent
     schedule:
       interval: "monthly"
-    groups:
-      gha:
-        patterns: ["*"]
