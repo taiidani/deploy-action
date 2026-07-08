@@ -33,7 +33,7 @@ services:
       BLUESKY_FEED_CHANNEL_ID: "715987686678200320"
 
   postgres:
-    image: postgres:17
+    image: postgres:18
     user: "977:988"
     restart: unless-stopped
     environment:
