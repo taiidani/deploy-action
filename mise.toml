@@ -2,6 +2,7 @@
 fnox = "latest"
 gh = "latest"
 "github:taiidani/groceries" = "latest"
+"github:taiidani/no-time-to-explain" = "latest"
 go = "latest"
 
 [tasks.deploy]
