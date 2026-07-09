@@ -2,11 +2,7 @@ name: guess-my-word
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
+    image: taiidani/guess-my-word:latest
     restart: unless-stopped
     command: ["/app/guess-my-word", "--port=3000"]
     ports:
