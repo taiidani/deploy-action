@@ -21,7 +21,7 @@ services:
       DATABASE_URL: "postgresql://${DATABASE_USER}:${DATABASE_PASS}@postgres:5432/groceries?sslmode=disable"
 
   postgres:
-    image: postgres:18
+    image: postgres:17
     user: "977:988"
     restart: unless-stopped
     environment:
