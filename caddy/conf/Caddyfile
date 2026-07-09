@@ -14,12 +14,12 @@
 
 taiidani.com {
   reverse_proxy {
-    to 192.168.102.80:3900
+    to 192.168.102.42:3900
   }
 }
 
 www.taiidani.com {
-  redir https:/taiidani.com permanent
+  redir https:/taiidani.com{uri} permanent
 }
 
 groceries.taiidani.com {
@@ -49,11 +49,5 @@ guess.taiidani.com {
 guessmyword.xyz {
   reverse_proxy {
     to 192.168.102.80:3500
-  }
-}
-
-deploy.taiidani.com {
-  reverse_proxy {
-    to 192.168.102.80:3201
   }
 }
