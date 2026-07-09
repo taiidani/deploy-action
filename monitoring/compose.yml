@@ -1,6 +1,6 @@
 services:
   grafana:
-    image: grafana/grafana-enterprise
+    image: grafana/grafana-enterprise:13.1.0
     restart: unless-stopped
     environment:
       - GF_SERVER_ROOT_URL=https://taiidani.com/
@@ -15,7 +15,7 @@ services:
       - prometheus
 
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v3.13.0
     restart: unless-stopped
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -30,7 +30,7 @@ services:
   # Log aggregation. Per-host Grafana Alloy agents (see ../alloy/) push Docker
   # container logs here. LAN-only (port 3100) so off-host agents can reach it.
   loki:
-    image: grafana/loki
+    image: grafana/loki:3.7.3
     restart: unless-stopped
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
@@ -43,7 +43,7 @@ services:
   # receive OTLP traces from local apps and forward them here. LAN-only so
   # off-host agents can reach it.
   tempo:
-    image: grafana/tempo
+    image: grafana/tempo:3.0.2
     restart: unless-stopped
     command: -config.file=/etc/tempo/tempo-config.yml
     volumes:

@@ -1,10 +1,14 @@
-# Tempo single-binary configuration. Alloy agents on each host receive OTLP
-# traces from local apps and forward them here; Grafana queries them over HTTP.
+# Tempo single-binary configuration (Tempo 3.x). Alloy agents on each host
+# receive OTLP traces from local apps and forward them here; Grafana queries
+# them over HTTP.
+#
+# Tempo 3.0 removed the standalone `ingester` and `compactor` modules. In
+# single-binary mode the distributor pushes directly to the live-store, and
+# compaction/retention is handled by the backend scheduler + worker.
 stream_over_http_enabled: true
 
 server:
   http_listen_port: 3200
-  grpc_listen_port: 9097 # distinct from Loki's 9096 to avoid confusion
 
 distributor:
   receivers:
@@ -15,12 +19,18 @@ distributor:
         http:
           endpoint: 0.0.0.0:4318
 
-ingester:
-  max_block_duration: 5m # cut blocks quickly so traces show up in Grafana fast
+# 30-day retention, matching Prometheus and Loki. Retention is enforced by the
+# backend scheduler (which plans compaction jobs) and the worker (which runs
+# them); both need the value.
+backend_scheduler:
+  provider:
+    compaction:
+      compaction:
+        block_retention: 720h
 
-compactor:
+backend_worker:
   compaction:
-    block_retention: 720h # 30 days, matches Prometheus and Loki
+    block_retention: 720h
 
 storage:
   trace:
@@ -29,3 +39,7 @@ storage:
       path: /var/tempo/wal
     local:
       path: /var/tempo/blocks
+
+# Home lab; no phoning home.
+usage_report:
+  reporting_enabled: false
