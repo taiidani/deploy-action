@@ -10,6 +10,8 @@ deleteDatasources:
     orgId: 1
   - name: Loki
     orgId: 1
+  - name: Tempo
+    orgId: 1
 
 datasources:
   - name: Prometheus
@@ -27,3 +29,19 @@ datasources:
     access: proxy
     url: http://loki:3100
     editable: false
+
+  # --- Traces ---
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
+    jsonData:
+      # Jump from a span straight to the matching container logs in Loki.
+      tracesToLogsV2:
+        datasourceUid: loki
+        filterByTraceID: true
+        tags:
+          - key: host.name
+            value: host

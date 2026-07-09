@@ -33,3 +33,55 @@ loki.write "default" {
 		host = constants.hostname,
 	}
 }
+
+// --- Traces ---
+
+// Receive OTLP traces from local applications over gRPC (4317) and HTTP (4318),
+// the OpenTelemetry defaults. Apps on this host point their exporter at
+// localhost and Alloy handles shipping to the central backend.
+otelcol.receiver.otlp "default" {
+	grpc {
+		endpoint = "0.0.0.0:4317"
+	}
+
+	http {
+		endpoint = "0.0.0.0:4318"
+	}
+
+	output {
+		traces = [otelcol.processor.attributes.default.input]
+	}
+}
+
+// Stamp every span with the source machine so traces can be correlated with
+// logs (which carry the matching "host" label). Mirrors loki.write above.
+otelcol.processor.attributes "default" {
+	action {
+		key    = "host.name"
+		value  = constants.hostname
+		action = "upsert"
+	}
+
+	output {
+		traces = [otelcol.processor.batch.default.input]
+	}
+}
+
+// Batch spans before shipping to cut network overhead.
+otelcol.processor.batch "default" {
+	output {
+		traces = [otelcol.exporter.otlp.tempo.input]
+	}
+}
+
+// Ship traces to the central Tempo on terra. Its OTLP gRPC receiver is
+// published on host port 4417 there (4317 is taken by that host's own Alloy).
+otelcol.exporter.otlp "tempo" {
+	client {
+		endpoint = "192.168.102.42:4417"
+
+		tls {
+			insecure = true
+		}
+	}
+}

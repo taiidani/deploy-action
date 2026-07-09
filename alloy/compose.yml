@@ -14,3 +14,6 @@ services:
     # Alloy UI (optional, LAN-only). Useful for debugging the pipeline.
     ports:
       - "12345:12345"
+      # OTLP trace receivers for local apps (gRPC / HTTP).
+      - "4317:4317"
+      - "4318:4318"

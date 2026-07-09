@@ -38,3 +38,19 @@ services:
       - "../data/monitoring/loki:/loki"
     ports:
       - "3100:3100"
+
+  # Distributed trace storage. Per-host Grafana Alloy agents (see ../alloy/)
+  # receive OTLP traces from local apps and forward them here. LAN-only so
+  # off-host agents can reach it.
+  tempo:
+    image: grafana/tempo
+    restart: unless-stopped
+    command: -config.file=/etc/tempo/tempo-config.yml
+    volumes:
+      - "./tempo/tempo-config.yml:/etc/tempo/tempo-config.yml:ro"
+      - "../data/monitoring/tempo:/var/tempo"
+    ports:
+      - "3200:3200" # Tempo query API (Grafana datasource)
+      # OTLP gRPC receiver. Published on host 4417 because the local Alloy on
+      # this host already binds 4317 for its own OTLP receiver.
+      - "4417:4317"
