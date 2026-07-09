@@ -1,10 +1,6 @@
 services:
   ryannixon:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
+    image: taiidani/uptime:latest
     restart: unless-stopped
     environment:
       DO_TOKEN: "${DO_TOKEN}"
@@ -12,11 +8,7 @@ services:
       DO_UPDATE_RECORDS: "home"
 
   taiidani:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
+    image: taiidani/uptime:latest
     restart: unless-stopped
     environment:
       DO_TOKEN: "${DO_TOKEN}"
@@ -24,11 +16,7 @@ services:
       DO_UPDATE_RECORDS: "@,home"
 
   ryannixon_dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
+    image: taiidani/uptime:latest
     restart: unless-stopped
     environment:
       DO_TOKEN: "${DO_TOKEN}"
@@ -36,11 +24,7 @@ services:
       DO_UPDATE_RECORDS: "@"
 
   guessmyword:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        ARTIFACT: ${ARTIFACT:-./artifacts/latest.tgz}
+    image: taiidani/uptime:latest
     restart: unless-stopped
     environment:
       DO_TOKEN: "${DO_TOKEN}"
