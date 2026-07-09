@@ -2,7 +2,7 @@
 fnox = "latest"
 gh = "latest"
 "github:taiidani/groceries" = "latest"
-"github:taiidani/no-time-to-explain" = "latest"
+"github:taiidani/no-time-to-explain" = "v2026.7.8+74106dd"
 go = "latest"
 
 [tasks.deploy]
