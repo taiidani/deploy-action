@@ -2,7 +2,7 @@ name: no-time-to-explain
 
 services:
   app:
-    image: taiidani/no-time-to-explain@latest
+    image: taiidani/no-time-to-explain:latest
     restart: unless-stopped
     ports:
       - 3502:3000
