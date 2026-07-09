@@ -9,7 +9,7 @@ services:
     ports:
       - "3900:3000"
     volumes:
-      - "./data/grafana:/var/lib/grafana"
+      - "../data/monitoring/grafana:/var/lib/grafana"
       - "./provisioning:/etc/grafana/provisioning"
     depends_on:
       - prometheus
@@ -23,7 +23,7 @@ services:
       - "--storage.tsdb.retention.time=30d"
     volumes:
       - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
-      - "./data/prometheus:/prometheus"
+      - "../data/monitoring/prometheus:/prometheus"
     ports:
       - "9095:9090"
 
@@ -35,6 +35,6 @@ services:
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
       - "./loki/loki-config.yml:/etc/loki/loki-config.yml:ro"
-      - "./data/loki:/loki"
+      - "../data/monitoring/loki:/loki"
     ports:
       - "3100:3100"
