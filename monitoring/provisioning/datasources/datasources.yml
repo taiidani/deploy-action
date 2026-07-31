@@ -18,7 +18,7 @@ datasources:
     type: prometheus
     uid: prometheus
     access: proxy
-    url: http://prometheus:9090
+    url: http://monitoring-prometheus.internal:9090
     isDefault: true
     editable: false
 
@@ -27,7 +27,7 @@ datasources:
     type: loki
     uid: loki
     access: proxy
-    url: http://loki:3100
+    url: http://monitoring-loki.internal:3100
     editable: false
 
   # --- Traces ---
@@ -35,7 +35,7 @@ datasources:
     type: tempo
     uid: tempo
     access: proxy
-    url: http://tempo:3200
+    url: http://monitoring-tempo.internal:3200
     editable: false
     jsonData:
       # Jump from a span straight to the matching container logs in Loki.

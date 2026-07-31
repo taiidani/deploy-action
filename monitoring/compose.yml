@@ -1,56 +1,68 @@
 services:
-  grafana:
-    image: grafana/grafana-enterprise:13.1.0
+  monitoring-grafana:
+    build:
+      context: .
+      dockerfile: grafana.dockerfile
+    x-ports:
+      - taiidani.com:3000/https
+    x-machines: monitoring
     restart: unless-stopped
     environment:
-      - GF_SERVER_ROOT_URL=https://taiidani.com/
+      GF_SERVER_ROOT_URL: https://taiidani.com/
       # Consumed by alerting provisioning (provisioning/alerting/contactpoints.yml).
-      - DISCORD_WEBHOOK_URL=${GRAFANA_DISCORD_WEBHOOK}
-    ports:
-      - "3900:3000"
+      DISCORD_WEBHOOK_URL: secret://GRAFANA_DISCORD_WEBHOOK
     volumes:
-      - "../data/monitoring/grafana:/var/lib/grafana"
-      - "./provisioning:/etc/grafana/provisioning"
+      - "/data/monitoring/grafana:/var/lib/grafana"
     depends_on:
-      - prometheus
+      - monitoring-prometheus
 
-  prometheus:
-    image: prom/prometheus:v3.13.0
+  monitoring-prometheus:
+    build:
+      context: .
+      dockerfile: prometheus.dockerfile
+    x-ports:
+      - "9095:9090/tcp@host"
+    x-machines: monitoring
     restart: unless-stopped
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=30d"
     volumes:
-      - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
-      - "../data/monitoring/prometheus:/prometheus"
-    ports:
-      - "9095:9090"
+      - "/data/monitoring/prometheus:/prometheus"
 
   # Log aggregation. Per-host Grafana Alloy agents (see ../alloy/) push Docker
   # container logs here. LAN-only (port 3100) so off-host agents can reach it.
-  loki:
-    image: grafana/loki:3.7.3
+  monitoring-loki:
+    build:
+      context: .
+      dockerfile: loki.dockerfile
+    x-ports:
+      - "3100:3100/tcp@host"
+    x-machines: monitoring
     restart: unless-stopped
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
-      - "./loki/loki-config.yml:/etc/loki/loki-config.yml:ro"
-      - "../data/monitoring/loki:/loki"
-    ports:
-      - "3100:3100"
+      - "/data/monitoring/loki:/loki"
 
   # Distributed trace storage. Per-host Grafana Alloy agents (see ../alloy/)
   # receive OTLP traces from local apps and forward them here. LAN-only so
   # off-host agents can reach it.
-  tempo:
-    image: grafana/tempo:3.0.2
+  monitoring-tempo:
+    build:
+      context: .
+      dockerfile: tempo.dockerfile
+    x-ports:
+      - "3200:3200/tcp@host" # Tempo query API (Grafana datasource)
+      # OTLP gRPC receiver. Published on host 4417 because the local Alloy on
+      # this host already binds 4317 for its own OTLP receiver.
+      - "4417:4317/tcp@host"
+    x-machines: monitoring
     restart: unless-stopped
     command: -config.file=/etc/tempo/tempo-config.yml
     volumes:
-      - "./tempo/tempo-config.yml:/etc/tempo/tempo-config.yml:ro"
-      - "../data/monitoring/tempo:/var/tempo"
-    ports:
-      - "3200:3200" # Tempo query API (Grafana datasource)
-      # OTLP gRPC receiver. Published on host 4417 because the local Alloy on
-      # this host already binds 4317 for its own OTLP receiver.
-      - "4417:4317"
+      - "/data/monitoring/tempo:/var/tempo"
+
+secrets:
+  GRAFANA_DISCORD_WEBHOOK:
+    x-command: fnox get GRAFANA_DISCORD_WEBHOOK
