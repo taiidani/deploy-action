@@ -32,7 +32,7 @@ services:
       POSTGRES_DB: groceries
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - /home/rnixon/deploy-action/data/groceries/postgres:/var/lib/postgresql/data
+      - /data/groceries/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
       interval: 10s
@@ -47,7 +47,7 @@ services:
     healthcheck:
       test: redis-cli ping || exit 1
     volumes:
-      - /home/rnixon/deploy-action/groceries/data/redis:/data
+      - /data/groceries/redis:/data
 
 secrets:
   DATABASE_URL:

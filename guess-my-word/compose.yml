@@ -21,4 +21,4 @@ services:
     healthcheck:
       test: redis-cli ping || exit 1
     volumes:
-      - /home/rnixon/deploy-action/guess-my-word/data/redis:/data
+      - /data/guess-my-word/redis:/data
