@@ -1,19 +1,22 @@
 services:
-  pms-docker:
+  plex:
     image: plexinc/pms-docker
+    x-machines: media
     restart: unless-stopped
-    container_name: plex
-    network_mode: host
     environment:
       - TZ=America/Los_Angeles
       - PLEX_CLAIM=claim-KzhcBnt3seFMoXX88t8X
+    mem_limit: 1.5g
+    mem_reservation: 500m
     volumes:
-      - ./data/config:/config
-      - ./data/transcode/temp:/transcode
-      - nfs_content:/data
+      - /data/plex/config:/config
+      - /data/plex/transcode/temp:/transcode
+      - plex-nfs-content:/data
+    x-ports:
+      - "32400:32400@host"
 
 volumes:
-  nfs_content:
+  plex-nfs-content:
     driver: local
     driver_opts:
       type: nfs
