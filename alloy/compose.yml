@@ -11,6 +11,7 @@ services:
       - /etc/alloy/config.alloy
       - --storage.path=/var/lib/alloy/data
       - --server.http.listen-addr=0.0.0.0:12345
+    mem_limit: 500m
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "/data/alloy:/var/lib/alloy/data"

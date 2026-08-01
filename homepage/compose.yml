@@ -4,6 +4,8 @@ services:
     x-ports:
       - home.taiidani.com:3000/https
     restart: unless-stopped
+    mem_limit: 200m
+    mem_reservation: 20m
     volumes:
       - /data/homepage:/app/config # Make sure your local config directory exists
       - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations

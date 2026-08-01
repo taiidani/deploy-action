@@ -7,6 +7,8 @@ services:
       - taiidani.com:3000/https
     x-machines: monitoring
     restart: unless-stopped
+    mem_limit: 1g
+    mem_reservation: 500m
     environment:
       GF_SERVER_ROOT_URL: https://taiidani.com/
       # Consumed by alerting provisioning (provisioning/alerting/contactpoints.yml).
@@ -23,6 +25,8 @@ services:
     x-ports:
       - "9095:9090/tcp@host"
     x-machines: monitoring
+    mem_limit: 500m
+    mem_reservation: 100m
     restart: unless-stopped
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -40,6 +44,8 @@ services:
     x-ports:
       - "3100:3100/tcp@host"
     x-machines: monitoring
+    mem_limit: 500m
+    mem_reservation: 100m
     restart: unless-stopped
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
@@ -58,6 +64,8 @@ services:
       # this host already binds 4317 for its own OTLP receiver.
       - "4417:4317/tcp@host"
     x-machines: monitoring
+    mem_limit: 500m
+    mem_reservation: 100m
     restart: unless-stopped
     command: -config.file=/etc/tempo/tempo-config.yml
     volumes:
