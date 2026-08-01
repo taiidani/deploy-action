@@ -10,9 +10,9 @@ services:
       - TZ=Etc/UTC
       - WEBUI_PORTS=7878/tcp
     volumes:
-      - ../data/radarr:/config
+      - /data/radarr:/config
       - nfs_content:/data
-      - ../data/downloads:/downloads
+      - /data/downloads:/downloads
 
   sonarr:
     image: ghcr.io/hotio/sonarr
@@ -25,9 +25,9 @@ services:
       - TZ=Etc/UTC
       - WEBUI_PORTS=8989/tcp
     volumes:
-      - ../data/sonarr:/config
+      - /data/sonarr:/config
       - nfs_content:/data
-      - ../data/downloads:/downloads
+      - /data/downloads:/downloads
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
 
@@ -43,8 +43,8 @@ services:
       - TORRENTING_PORT=6881
       - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
-      - ../data/qbittorrent:/config
-      - ../data/downloads:/downloads #optional
+      - /data/qbittorrent:/config
+      - /data/downloads:/downloads #optional
 
   gluetun:
     image: qmcgaw/gluetun
@@ -60,9 +60,9 @@ services:
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
     ports:
       # All qBittorrent ports
-      - 8080:8080
-      - 6881:6881
-      - 6881:6881/udp
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
       # Radarr
       - "7878:7878"
       # Sonarr
@@ -81,7 +81,7 @@ services:
       - TZ=Etc/UTC
       - WEBUI_PORTS=9696/tcp
     volumes:
-      - ../data/prowlarr:/config
+      - /data/prowlarr:/config
 
 volumes:
   nfs_content:
