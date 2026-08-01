@@ -15,7 +15,7 @@ services:
       - ./redis.conf:/config/redis.conf:ro
 
   redisinsight:
-    image: redis/redisinsight:2.70
+    image: redis/redisinsight:3.8
     restart: unless-stopped
     ports:
       - 5540:5540
