@@ -40,3 +40,5 @@ services:
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=prod"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://alloy.internal:4317"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
