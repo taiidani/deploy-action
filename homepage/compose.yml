@@ -1,8 +1,7 @@
 services:
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
-    x-ports:
-      - home.taiidani.com:3000/https
+    x-caddy: ./Caddyfile
     restart: unless-stopped
     mem_limit: 200m
     mem_reservation: 20m

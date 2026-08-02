@@ -1,0 +1,13 @@
+https://home.taiidani.com {
+    basic_auth {
+        # bcrypt hash
+        # $ mise exec caddy@latest -- caddy hash-password
+        taiidani $2a$14$aULgMBiyBtsSwbXTJsaRjetKnn5mWzz4dxZ4ZMqOo4.KkCh2bp/di
+    }
+
+    reverse_proxy {{upstreams 3000}} {
+        import common_proxy
+    }
+
+    log
+}
