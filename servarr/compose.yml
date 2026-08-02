@@ -3,8 +3,8 @@ services:
     image: ghcr.io/hotio/radarr
     restart: unless-stopped
     network_mode: service:gluetun
-    mem_limit: 200m
-    mem_reservation: 20m
+    mem_limit: 600m
+    mem_reservation: 50m
     environment:
       - PUID=1000
       - PGID=1000
@@ -20,8 +20,8 @@ services:
     image: ghcr.io/hotio/sonarr
     restart: unless-stopped
     network_mode: service:gluetun
-    mem_limit: 200m
-    mem_reservation: 20m
+    mem_limit: 600m
+    mem_reservation: 50m
     environment:
       - PUID=1000
       - PGID=1000
@@ -39,8 +39,8 @@ services:
     image: lscr.io/linuxserver/qbittorrent:latest
     restart: unless-stopped
     network_mode: service:gluetun
-    mem_limit: 200m
-    mem_reservation: 20m
+    mem_limit: 600m
+    mem_reservation: 50m
     environment:
       - PUID=1000
       - PGID=1000
@@ -59,8 +59,8 @@ services:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
-    mem_limit: 200m
-    mem_reservation: 20m
+    mem_limit: 600m
+    mem_reservation: 50m
     environment:
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
@@ -82,8 +82,8 @@ services:
     image: ghcr.io/hotio/prowlarr
     restart: unless-stopped
     network_mode: service:gluetun
-    mem_limit: 200m
-    mem_reservation: 20m
+    mem_limit: 600m
+    mem_reservation: 50m
     environment:
       - PUID=1000
       - PGID=1000
