@@ -1,0 +1,6 @@
+discovery:
+  instrument:
+    - open_ports: 3000
+  exclude_services:
+    - container_name: ".*alloy.*"
+    - container_name: ".*monitoring.*"

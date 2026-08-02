@@ -34,9 +34,7 @@ loki.write "default" {
 	}
 }
 
-// --- Traces ---
-
-// Receive OTLP traces from local applications over gRPC (4317) and HTTP (4318),
+// Receive OTLP metrics and traces from local applications over gRPC (4317) and HTTP (4318),
 // the OpenTelemetry defaults. Apps on this host point their exporter at
 // localhost and Alloy handles shipping to the central backend.
 otelcol.receiver.otlp "default" {
@@ -50,6 +48,7 @@ otelcol.receiver.otlp "default" {
 
 	output {
 		traces = [otelcol.processor.attributes.default.input]
+		metrics = [otelcol.exporter.prometheus.default.input]
 	}
 }
 
@@ -78,10 +77,22 @@ otelcol.processor.batch "default" {
 // published on host port 4417 there (4317 is taken by that host's own Alloy).
 otelcol.exporter.otlp "tempo" {
 	client {
-		endpoint = "monitoring-tempo.internal:4417"
+		endpoint = "monitoring-tempo.internal:4317"
 
 		tls {
 			insecure = true
 		}
+	}
+}
+
+// Convert OTLP metrics to Prometheus format
+otelcol.exporter.prometheus "default" {
+	forward_to = [prometheus.remote_write.default.receiver]
+}
+
+// Ship to your central Prometheus
+prometheus.remote_write "default" {
+	endpoint {
+		url = "http://monitoring-prometheus.internal:9090/api/v1/write"
 	}
 }

@@ -17,7 +17,26 @@ services:
       - "/data/alloy:/var/lib/alloy/data"
     # Alloy UI (optional, LAN-only). Useful for debugging the pipeline.
     x-ports:
-      - "12345:12345/tcp@host"
+      - "12345:12345@host"
       # OTLP trace receivers for local apps (gRPC / HTTP).
-      - "4317:4317/tcp@host"
-      - "4318:4318/tcp@host"
+      - "4317:4317@host"
+      - "4318:4318@host"
+
+  ebpf-autoinstrumenter:
+    build:
+      context: .
+      dockerfile: obi.Dockerfile
+    deploy:
+      mode: global
+    pid: 'host'
+    privileged: true
+    environment:
+      OTEL_EBPF_TRACE_PRINTER: text
+      OTEL_EBPF_CONFIG_PATH: /etc/obi/config.yml
+      OTEL_EBPF_IGNORE_ROUTES: "/api/healthcheck,/health,/ready,/metrics,/ping"
+      OTEL_EBPF_EXCLUDE_REDIS_COMMANDS: "PING"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_TRACES_SAMPLER: "parentbased_always_on"
+      OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=prod"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://alloy.internal:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
