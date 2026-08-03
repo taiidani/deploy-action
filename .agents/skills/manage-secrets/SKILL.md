@@ -5,19 +5,21 @@ description: Manage 1Password + fnox secrets for services in taiidani's home lab
 
 # Managing Secrets with 1Password + fnox
 
-Secrets are stored in 1Password and fetched by fnox. fnox is **not** auto-injected globally — there's no `mise-env-fnox` plugin or root `[env]` auto-injection, and it doesn't run just from `cd`-ing into a service directory. It's invoked explicitly, once, by the `deploy` task in the root `mise.toml`, wrapping only the `docker compose` command it runs:
+Secrets are stored in 1Password and fetched by [fnox](https://fnox.jdx.dev). **Uncloud runs fnox for you at deploy time** — you don't wrap commands in `fnox exec` yourself. Declare a secret in the service's `compose.yml` using the `x-command` extension on a top-level `secrets:` entry, and Uncloud executes that command when deploying:
 
-```bash
-fnox exec --if-missing=error -- docker compose up -d --build --wait
+```yaml
+secrets:
+  GRAFANA_DISCORD_WEBHOOK:
+    x-command: fnox get GRAFANA_DISCORD_WEBHOOK
 ```
 
-For the full deploy flow this is part of, see the `deploy-service` skill.
+fnox is installed locally via the root `mise.toml` (`mise install` if it's missing). For the full deploy flow this is part of, see the `deploy-service` skill.
 
 ## Configuration
 
 - 1Password Vault: `Development`
 - Authentication: `OP_SERVICE_ACCOUNT_TOKEN` in `mise.local.toml` (gitignored)
-- Root `fnox.toml` holds secrets shared across multiple services (e.g. the shared Postgres `DATABASE_USER`/`DATABASE_PASS`)
+- Root `fnox.toml` holds secrets shared across multiple services
 - Each service that needs its own secrets has its own `<service>/fnox.toml`
 
 ## Adding a secret to a service
@@ -34,19 +36,30 @@ For the full deploy flow this is part of, see the `deploy-service` skill.
    [secrets]
    "SECRET_NAME" = { provider = "onepass", value = "Item Name/field" }
    ```
-3. Reference it in `<service>/compose.yml` with `${SECRET_NAME}`
-4. The secret is injected the next time `mise deploy <service-name>` runs `fnox exec -- docker compose ...`
+3. Declare it in `<service>/compose.yml` so Uncloud resolves it via fnox:
+   ```yaml
+   secrets:
+     SECRET_NAME:
+       x-command: fnox get SECRET_NAME
+   ```
+   and reference it in the service's `environment` / secret mounts as appropriate.
+4. The secret is resolved the next time `uc deploy` runs in the service directory.
+
+fnox resolves configuration relative to the directory it runs in, so run `uc deploy` (and any manual `fnox` commands) from inside `<service>/` so that service's `fnox.toml` takes effect; otherwise the root `fnox.toml` applies.
 
 ## Testing secrets manually
 
 ```bash
 cd <service-name>
+fnox get SECRET_NAME            # resolve a single secret, exactly as Uncloud will
 fnox exec --if-missing=error -- env | grep SECRET_NAME
 ```
 
 ## Troubleshooting
 
 - **Secrets not found:** Check the 1Password vault has the item/field, verify `mise.local.toml` has `OP_SERVICE_ACCOUNT_TOKEN`
-- **Variables empty:** Test with `fnox exec -- env`, clear cache: `rm -rf ~/.local/share/mise/cache/`
-- **Wrong secrets used:** fnox resolves relative to the directory it's invoked from. The `deploy` task `cd`s into `<service>/` first, so that service's `fnox.toml` (if present) takes effect for that deploy; otherwise the root `fnox.toml` applies
+- **`fnox` not found:** Run `mise install` — fnox comes from the root `mise.toml`
+- **Variables empty:** Test with `fnox get SECRET_NAME` from the service directory; clear the fnox cache if values look stale
+- **Wrong secrets used:** fnox resolves relative to the directory it's invoked from — make sure you ran `uc deploy` from `<service>/`
 - **Ensure item/field names in `fnox.toml` match 1Password exactly** — mismatches fail silently as missing secrets
+- **servarr exception:** `servarr/` is deployed with plain `docker compose` on the host, so Uncloud does not run `x-command` for it — wrap manual commands in `fnox exec` there if secrets are needed

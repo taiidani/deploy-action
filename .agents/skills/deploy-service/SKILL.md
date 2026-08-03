@@ -1,128 +1,105 @@
 ---
 name: deploy-service
-description: Deploy or register a service in taiidani's home lab deploy-action repo using mise, the centralized root Dockerfile, and Docker Compose. Use when asked to deploy a service, push out a new release, add a brand-new service, or wire up Caddy ingress for one.
+description: Deploy or register a service in taiidani's home lab deploy-action repo using Uncloud (`uc`) and Docker Compose. Use when asked to deploy a service, push out a new release, add a brand-new service, or wire up ingress for one.
 ---
 
 # Deploying a Service
 
-This repo has no GitHub Actions workflow and no separate `deployer` webhook app. All deployments are driven directly on the host by `mise` commands defined in the root `mise.toml`.
+Deployments are driven by [Uncloud](https://uncloud.run/docs/) (`uc` CLI), which deploys each service's `compose.yml` across the cluster. Uncloud manages the Caddy reverse proxy itself — there is no hand-maintained Caddyfile.
+
+`mise` is **not** used for deploying. It only provides repo tooling dependencies (e.g. `fnox`) via the root `mise.toml`.
 
 For anything related to secrets (1Password/fnox), see the `manage-secrets` skill.
 
 ## Deploying an existing service
 
-1. Pull the latest release binary:
-   ```bash
-   mise up github:taiidani/<service-name>
-   ```
-   `mise deploy` does not refresh the tool itself — always run `mise up` first if you want the newest release.
+```bash
+cd <service-name>
+uc deploy
+```
 
-2. Deploy:
-   ```bash
-   mise deploy <service-name>
-   ```
+`uc deploy` reads the local `compose.yml`, prints a deployment plan (what containers will be created/replaced/removed, and on which machines), asks for confirmation, and performs zero-downtime rolling updates (`start-first` ordering).
 
-The `deploy` task (defined in the root `mise.toml`):
-1. Stages the binary: copies `$(which <service-name>)` (the mise-managed binary from the `github:` tool backend) into `<service-name>/artifacts/<service-name>`
-2. Builds the image from the centralized root `Dockerfile`: `docker build -t taiidani/<service-name> --build-arg NAME=<service-name> .`
-3. `cd`s into `<service-name>/` and runs `fnox exec --if-missing=error -- docker compose up -d --build --wait` to inject secrets and start the compose stack
-4. Shows status via `fnox exec --if-missing=error -- docker compose ps`
+Useful follow-ups:
+
+```bash
+uc ls                    # list services and their public endpoints
+uc inspect <service>     # status/details of a service
+uc logs <service> -f     # stream logs
+uc rm <service>          # remove a service
+```
 
 ## Adding a brand-new service
 
-1. **Register the service's binary with mise (one-time):**
-   ```bash
-   mise use github:taiidani/<service-name>@latest
-   ```
-   This adds a `"github:taiidani/<service-name>" = "latest"` entry to the root `mise.toml` `[tools]` table.
-
-2. **Create `<service-name>/compose.yml`:**
+1. **Create `<service-name>/compose.yml`:**
    ```yaml
    services:
      app:
-       image: taiidani/<service-name>:latest
+       image: <image>:<tag>
        restart: unless-stopped
-       ports:
-         - <external-port>:<internal-port>
+       x-ports:
+         - <service>.taiidani.com:<internal-port>/https   # public HTTPS via Uncloud's Caddy
+       # x-machines: <machine-name>                       # pin to a specific machine, if needed
        environment:
          KEY: "${VALUE}"
    ```
-   No per-service `Dockerfile` is needed — the root `Dockerfile` handles the build for any service registered with mise.
 
-3. **If secrets are needed**, create `<service-name>/fnox.toml` — see the `manage-secrets` skill.
+2. **If secrets are needed**, create `<service-name>/fnox.toml` and declare the secret in the compose file — see the `manage-secrets` skill.
 
-4. **If HTTP access is needed, add to Caddy:**
-   Edit `caddy/conf/Caddyfile`:
-   ```
-   <service>.taiidani.com {
-     reverse_proxy {
-       to 192.168.102.80:<port>
-     }
-   }
-   ```
-   Then reload Caddy (see "Caddy ingress management" below).
-
-5. **Deploy it:**
+3. **Deploy it:**
    ```bash
-   mise up github:taiidani/<service-name>
-   mise deploy <service-name>
+   cd <service-name>
+   uc deploy
    ```
 
-## Centralized Dockerfile
+## Uncloud Compose extensions
 
-Every service shares the single root `Dockerfile` — never add a per-service `Dockerfile` for a mise-managed binary service:
-```dockerfile
-FROM scratch
-ARG NAME
-COPY artifacts/${NAME} /app
-CMD ["/app"]
-```
+Uncloud extends the Compose format with `x-` keys used throughout this repo:
 
-## Working with a running service locally
+- **`x-ports`** — port publishing:
+  - `domain:port/https` — public HTTPS endpoint through Uncloud's managed Caddy (e.g. `taiidani.com:3000/https`)
+  - `"8081:8080/tcp@host"` — publish directly on the host's network interface (LAN-only, no ingress)
+- **`x-machines`** — pin a service to a specific machine (e.g. `x-machines: monitoring`)
+- **`x-command`** (on `secrets:` entries) — command Uncloud runs to resolve a secret value (e.g. `x-command: fnox get GRAFANA_DISCORD_WEBHOOK`)
+- **`deploy.mode: global`** — run one container per machine (used by per-host agents like `alloy/` and `cadvisor/`)
 
-```bash
-cd <service-name>
-docker compose logs -f          # view logs
-docker compose restart          # restart
-docker compose down             # stop
-```
+## Ingress
 
-Running `docker compose` directly like this does **not** inject secrets — only `mise deploy` (via `fnox exec`) does that. See the `manage-secrets` skill if you need secrets present for a manual command.
+Uncloud runs Caddy as a cluster service and configures it automatically from `x-ports` entries. To expose a service over HTTPS, add a `domain:port/https` entry to `x-ports` and run `uc deploy` — no manual Caddyfile edits or reloads.
 
-## Caddy ingress management
+## Exception: servarr
+
+`servarr/` is **not** deployed through Uncloud. It runs directly on its host with plain Docker Compose:
 
 ```bash
-cd caddy
-docker compose exec app caddy reload --config /etc/caddy/Caddyfile    # reload config
-docker compose exec app caddy validate --config /etc/caddy/Caddyfile  # validate syntax
-docker compose logs -f                                                 # view logs
+cd servarr
+docker compose up -d
 ```
+
+Its compose file uses features Uncloud doesn't manage (e.g. `network_mode: service:gluetun` for VPN-routed traffic). Treat it as a manually-managed stack.
 
 ## Volume mounts
 
-Each service manages its own data volumes in its directory, e.g.:
+Services store persistent data on the host, typically under `/data/<service>/...`:
+
 ```yaml
 volumes:
-  - ./data:/data              # Application data
-  - ./data/redis:/data        # Redis data
-  - ./data/config:/config     # Configuration
+  - /data/monitoring/tempo:/var/tempo
 ```
 
 ## Reference: active services
 
-- `alloy/` - Per-host log shipper (Grafana Alloy, deployed on each host)
-- `cadvisor/` - Per-host container metrics exporter (deployed on each host)
-- `caddy/` - HTTP reverse proxy and ingress
+- `alloy/` - Per-host log shipper (Grafana Alloy, `deploy.mode: global`)
+- `cadvisor/` - Per-host container metrics exporter (`deploy.mode: global`)
+- `caddy/` - HTTP reverse proxy (managed by Uncloud)
 - `gitea/` - Self-hosted Git service
-- `groceries/` - Grocery list web app with Redis (port 3501)
-- `guess-my-word/` - Word guessing game (port 3500)
 - `homepage/` - Dashboard homepage
+- `immich/` - Photo management
 - `lil-dumpster/` - Discord bot with Redis
-- `monitoring/` - Grafana + Prometheus observability stack
-- `no-time-to-explain/` - Destiny 2 Discord bot with Redis (port 3502)
-- `plex/` - Media server
+- `monitoring/` - Grafana + Prometheus + Loki + Tempo observability stack (pinned to the `monitoring` machine)
+- `plex/` - Media server (pinned to the `media` machine)
 - `redis/` - Standalone Redis instance
-- `servarr/` - Media management stack (Sonarr, Radarr, etc.)
-- `tfc-agent/` - Terraform Cloud agents (scaled to 2 replicas)
+- `servarr/` - Media management stack (Sonarr, Radarr, etc.) — **manual `docker compose`, not Uncloud**
+- `tfc-agent/` - Terraform Cloud agents
 
-Services discover each other via Docker's internal DNS: `<service>.<project>_default` (e.g. `redis.groceries_default`). External services (outside Docker Compose) use static IPs (e.g. `192.168.102.80`).
+Services discover each other via cluster DNS by service name. Host-published ports use the `@host` suffix in `x-ports`.

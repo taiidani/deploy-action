@@ -1,37 +1,40 @@
 # deploy-action
 
-Home lab deployment configurations using Docker Compose.
+Home lab deployment configurations using Docker Compose and [Uncloud](https://uncloud.run/docs/).
 
 ## What's Here
 
 - **Docker Compose services** - Each service in `<service>/compose.yml`
-- **Secrets** - 1Password + fnox injects secrets at deploy time via explicit `fnox exec`
-- **Ingress** - Caddy reverse proxy in `caddy/`
-- **Deployment** - A centralized root `Dockerfile` plus a `mise deploy` task; no GitHub Actions workflow or webhook listener involved
-- **Artifacts** - Binaries staged at `<service>/artifacts/` by the `mise deploy` task
+- **Secrets** - 1Password + fnox, resolved at deploy time by Uncloud via `x-command` entries in the compose file
+- **Ingress** - Caddy reverse proxy, managed by Uncloud from `x-ports` entries (no hand-maintained Caddyfile)
+- **Deployment** - Uncloud (`uc deploy`) per service; no GitHub Actions workflow or webhook listener involved
+- **Tooling** - `mise` only provides repo dependencies (e.g. `fnox`); it is not used to deploy
 
 ## Quick Start
 
-**Register a service's binary with mise (one-time):**
+**Install repo tooling (fnox):**
 ```bash
-mise use github:taiidani/<service-name>@latest
+mise install
 ```
 
-**Pull the latest release and deploy:**
-```bash
-mise up github:taiidani/<service-name>
-mise deploy <service-name>
-```
-
-**Work with a running service directly:**
+**Deploy a service:**
 ```bash
 cd <service-name>
-docker compose logs -f
+uc deploy
 ```
+
+**Work with a running service:**
+```bash
+uc ls                  # list services and endpoints
+uc logs <service> -f   # stream logs
+uc inspect <service>   # status and details
+```
+
+**Exception:** `servarr/` is deployed manually with plain Docker Compose directly on its host (`docker compose up -d`), not via Uncloud.
 
 ## Documentation
 
 Detailed, actionable guidance for agents lives in this repo's skills rather than standalone docs:
 
-- **[.agents/skills/deploy-service](.agents/skills/deploy-service/SKILL.md)** - Deploying and registering services, Dockerfile/compose patterns, Caddy ingress
+- **[.agents/skills/deploy-service](.agents/skills/deploy-service/SKILL.md)** - Deploying and registering services with Uncloud, Compose `x-` extensions (`x-ports`, `x-machines`, `x-command`), ingress
 - **[.agents/skills/manage-secrets](.agents/skills/manage-secrets/SKILL.md)** - 1Password + fnox secrets setup and troubleshooting
