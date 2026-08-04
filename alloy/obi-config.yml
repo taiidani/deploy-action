@@ -1,6 +1,3 @@
-otel_traces_export:
-  endpoint: http://alloy.internal:4318/v1/traces
-
 discovery:
   instrument:
     - container_name: "guess-my-word*"
@@ -14,13 +11,13 @@ attributes:
   container:
     enable: true
 
-ebpf:
-  log_enricher:
-    services:
-      - service:
-        - container_name: "guess-my-word*"
-          open_ports: 3000
-        - container_name: "groceries*"
-          open_ports: 3000
-        - container_name: "no-time-to-explain*"
-          open_ports: 3000
+# ebpf:
+#   log_enricher:
+#     services:
+#       - service:
+#         - container_name: "guess-my-word*"
+#           open_ports: 3000
+#         - container_name: "groceries*"
+#           open_ports: 3000
+#         - container_name: "no-time-to-explain*"
+#           open_ports: 3000
