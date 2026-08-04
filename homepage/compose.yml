@@ -2,6 +2,7 @@ services:
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
     x-caddy: ./Caddyfile
+    x-machines: web
     restart: unless-stopped
     mem_limit: 200m
     mem_reservation: 20m
@@ -9,4 +10,6 @@ services:
       - /data/homepage:/app/config # Make sure your local config directory exists
       - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations
     environment:
-      HOMEPAGE_ALLOWED_HOSTS: terra:3005,192.168.102.80:3005,home.taiidani.com,taiidani.com # required, may need port. See gethomepage.dev/installation/#homepage_allowed_hosts
+      HOMEPAGE_ALLOWED_HOSTS: obsidian:3005,192.168.102.80:3005,home.taiidani.com,taiidani.com # required, may need port. See gethomepage.dev/installation/#homepage_allowed_hosts
+    # x-ports:
+    #   - "home.taiidani.com:3000/https"
