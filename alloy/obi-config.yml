@@ -1,12 +1,23 @@
 discovery:
   instrument:
-    - open_ports: 3000
-  exclude_services:
-    - container_name: "monitoring.*"
-    - container_name: "grafana.*"
-    - container_name: "alloy.*"
-    - container_name: "homepage.*"
+    - container_name: "guess-my-word*"
+      open_ports: 3000
+    - container_name: "groceries*"
+      open_ports: 3000
+    - container_name: "no-time-to-explain*"
+      open_ports: 3000
 
 attributes:
   container:
     enable: true
+
+ebpf:
+  log_enricher:
+    services:
+      - service:
+        - container_name: "guess-my-word*"
+          open_ports: 3000
+        - container_name: "groceries*"
+          open_ports: 3000
+        - container_name: "no-time-to-explain*"
+          open_ports: 3000
