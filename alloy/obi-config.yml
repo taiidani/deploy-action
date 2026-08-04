@@ -1,3 +1,6 @@
+otel_traces_export:
+  endpoint: http://alloy.internal:4318/v1/traces
+
 discovery:
   instrument:
     - container_name: "guess-my-word*"
