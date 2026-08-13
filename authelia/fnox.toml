@@ -1,0 +1,9 @@
+default_provider = "onepass"
+
+[providers.onepass]
+type = "1password"
+vault = "Development"
+
+[secrets]
+"AUTHELIA_JWT_SECRET"= { provider = "onepass", value = "authelia jwt_secret" }
+"AUTHELIA_STORAGE_ENCRYPTION_KEY"= { provider = "onepass", value = "authelia storage_encryption_key" }

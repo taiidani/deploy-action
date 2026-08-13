@@ -1,0 +1,28 @@
+---
+services:
+  authelia:
+    image: "docker.io/authelia/authelia:latest"
+    x-machines: web
+    restart: "unless-stopped"
+    configs:
+      - source: authelia_config
+        target: /config/configuration.yml
+        mode: 0644
+    environment:
+      AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET: "secret://JWT_SECRET"
+      AUTHELIA_STORAGE_ENCRYPTION_KEY: "secret://STORAGE_ENCRYPTION_KEY"
+    x-ports:
+      - "auth.taiidani.com:9091/https"
+    volumes:
+      - "/data/authelia/config:/config"
+
+configs:
+  authelia_config:
+    file: ./configuration.yml
+
+secrets:
+  JWT_SECRET:
+    x-command: fnox get AUTHELIA_JWT_SECRET
+  STORAGE_ENCRYPTION_KEY:
+    x-command: fnox get AUTHELIA_STORAGE_ENCRYPTION_KEY
+...
