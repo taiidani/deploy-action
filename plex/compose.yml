@@ -11,14 +11,6 @@ services:
     volumes:
       - /data/plex/config:/config
       - /data/plex/transcode/temp:/transcode
-      - plex-nfs-content:/data
+      - /mnt/unas/content:/data
     x-ports:
       - "32400:32400@host"
-
-volumes:
-  plex-nfs-content:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=192.168.102.3,nfsvers=3,proto=tcp,nconnect=4,rsize=1048576,noatime,actimeo=600,hard,timeo=100,retrans=3"
-      device: ":/var/nfs/shared/Storage/content"
