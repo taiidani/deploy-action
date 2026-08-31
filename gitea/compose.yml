@@ -1,6 +1,6 @@
 services:
   server:
-    image: docker.gitea.com/gitea:1.27.1
+    image: docker.gitea.com/gitea:1.27.3
     restart: unless-stopped
     depends_on:
       postgres:
