@@ -31,5 +31,5 @@ services:
     # Optional - may be necessary for docker healthcheck to pass if running in host network mode
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    # devices:
-    #   - /dev/dri/renderD105:/dev/dri/renderD105
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
