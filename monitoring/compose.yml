@@ -23,15 +23,17 @@ services:
       - monitoring-prometheus
 
   monitoring-prometheus:
-    build:
-      context: .
-      dockerfile: prometheus.dockerfile
+    image: prom/prometheus:v3.13.0
     x-ports:
       - "9095:9090/tcp@host"
     x-machines: monitoring
     mem_limit: 500m
     mem_reservation: 100m
     restart: unless-stopped
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+        mode: 0644
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -42,15 +44,17 @@ services:
   # Log aggregation. Per-host Grafana Alloy agents (see ../alloy/) push Docker
   # container logs here. LAN-only (port 3100) so off-host agents can reach it.
   monitoring-loki:
-    build:
-      context: .
-      dockerfile: loki.dockerfile
+    image: grafana/loki:3.7.3
     x-ports:
       - "3100:3100/tcp@host"
     x-machines: monitoring
     mem_limit: 500m
     mem_reservation: 100m
     restart: unless-stopped
+    configs:
+      - source: loki_config
+        target: /etc/loki/loki-config.yml
+        mode: 0644
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
       - "/data/monitoring/loki:/loki"
@@ -59,18 +63,20 @@ services:
   # receive OTLP traces from local apps and forward them here. LAN-only so
   # off-host agents can reach it.
   monitoring-tempo:
-    build:
-      context: .
-      dockerfile: tempo.dockerfile
+    image: grafana/tempo:3.0.2
     x-ports:
       - "3200:3200/tcp@host" # Tempo query API (Grafana datasource)
       # OTLP gRPC receiver. Published on host 4417 because the local Alloy on
       # this host already binds 4317 for its own OTLP receiver.
       - "4417:4317/tcp@host"
     x-machines: monitoring
+    restart: unless-stopped
     mem_limit: 500m
     mem_reservation: 100m
-    restart: unless-stopped
+    configs:
+      - source: tempo_config
+        target: /etc/tempo/tempo-config.yml
+        mode: 0644
     command: -config.file=/etc/tempo/tempo-config.yml
     volumes:
       - "/data/monitoring/tempo:/var/tempo"
@@ -78,6 +84,12 @@ services:
 configs:
   grafana_config:
     file: ./grafana.ini
+  tempo_config:
+    file: ./tempo-config.yml
+  prometheus_config:
+    file: ./prometheus.yml
+  loki_config:
+    file: ./loki-config.yml
 
 secrets:
   GRAFANA_DISCORD_WEBHOOK:
