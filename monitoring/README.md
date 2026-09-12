@@ -4,7 +4,7 @@ Observability stack for the home lab, centered on Grafana.
 
 | Component | Role | Datadog equivalent |
 | --- | --- | --- |
-| Grafana | Dashboards + querying (port 3900, fronted by Caddy at `taiidani.com`) | Dashboards |
+| Grafana | Dashboards + querying (port 3900, fronted by Caddy at `grafana.taiidani.com`) | Dashboards |
 | Prometheus | Metrics storage + scraping (port 9095, 30-day retention) | Metrics backend |
 | Loki | Log storage + querying (port 3100, 30-day retention) | Log Management |
 | Tempo | Trace storage + querying (query API port 3200, OTLP in on host port 4417, 30-day retention) | APM / Traces backend |

@@ -4,13 +4,13 @@ services:
       context: .
       dockerfile: grafana.dockerfile
     x-ports:
-      - taiidani.com:3000/https
+      - grafana.taiidani.com:3000/https
     x-machines: monitoring
     restart: unless-stopped
     mem_limit: 1g
     mem_reservation: 500m
     environment:
-      GF_SERVER_ROOT_URL: https://taiidani.com/
+      GF_SERVER_ROOT_URL: https://grafana.taiidani.com/
       # Consumed by alerting provisioning (provisioning/alerting/contactpoints.yml).
       DISCORD_WEBHOOK_URL: secret://GRAFANA_DISCORD_WEBHOOK
     volumes:
