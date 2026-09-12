@@ -1360,6 +1360,27 @@ identity_providers:
           - 'urn:ietf:params:oauth:grant-type:device_code'
         token_endpoint_auth_method: 'none'
 
+      - client_id: 'groceries-ios'
+        client_name: 'Groceries (iOS)'
+        ## Public client for the native iOS app: uses Authorization Code + PKCE via ASWebAuthenticationSession
+        ## (RFC 8252 native app flow). No client secret is needed since PKCE protects the code exchange.
+        public: true
+        authorization_policy: 'one_factor'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'com.ryannixon.groceries://auth/callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'email'
+          - 'groups'
+        response_types:
+          - 'code'
+        grant_types:
+          - 'authorization_code'
+        token_endpoint_auth_method: 'none'
+
     ## SECURITY NOTICE: It's not recommended changing this option and values below 8 are strongly discouraged.
     # minimum_parameter_entropy: 8
 
