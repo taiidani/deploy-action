@@ -1265,51 +1265,59 @@ notifier:
 ##
 ## Identity Providers
 ##
-# identity_providers:
+identity_providers:
 
   ##
   ## OpenID Connect (Identity Provider)
   ##
   ## It's recommended you read the documentation before configuration of this section.
   ## See: https://www.authelia.com/c/oidc/provider
-  # oidc:
+  oidc:
     ## The hmac_secret is used to sign OAuth2 tokens (authorization code, access tokens and refresh tokens).
-    ## HMAC Secret can also be set using a secret: https://www.authelia.com/c/secrets
-    # hmac_secret: 'this_is_a_secret_abc123abc123abc'
+    ## Populated via the AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET env var (see compose.yml).
 
     ## The JWK's issuer option configures multiple JSON Web Keys. It's required that at least one of the JWK's
     ## configured has the RS256 algorithm. For RSA keys (RS or PS) the minimum is a 2048 bit key.
-    # jwks:
-    # -
-      ## Key ID embedded into the JWT header for key matching. Must be an alphanumeric string with 7 or less characters.
-      ## This value is automatically generated if not provided. It's recommended to not configure this.
-      # key_id: 'example'
-
-      ## The key algorithm used with this key.
-      # algorithm: 'RS256'
-
-      ## The key use expected with this key. Currently only 'sig' is supported.
-      # use: 'sig'
-
-      ## Required Private Key in PEM DER form.
-      # key: |
-        # -----BEGIN PRIVATE KEY-----
-        # ...
-        # -----END PRIVATE KEY-----
-
-
-      ## Optional matching certificate chain in PEM DER form that matches the key. All certificates within the chain
-      ## must be valid and current, and from top to bottom each certificate must be signed by the subsequent one.
-      # certificate_chain: |
-        # -----BEGIN CERTIFICATE-----
-        # ...
-        # -----END CERTIFICATE-----
-        # -----BEGIN CERTIFICATE-----
-        # ...
-        # -----END CERTIFICATE-----
+    ##
+    ## Lists of objects (like jwks and clients) can't be populated via plain Authelia env vars, so the private key
+    ## is injected via Authelia's config templating (X_AUTHELIA_CONFIG_FILTERS=template in compose.yml) reading the
+    ## OIDC_ISSUER_PRIVATE_KEY env var (itself populated from the OIDC_ISSUER_PRIVATE_KEY secret). Intentionally not
+    ## prefixed with AUTHELIA_ since the template `env` function excludes AUTHELIA_*_KEY/SECRET/etc. vars.
+    jwks:
+      - key_id: 'grafana'
+        algorithm: 'RS256'
+        use: 'sig'
+        key: |
+          {{- env "OIDC_ISSUER_PRIVATE_KEY" | nindent 10 }}
 
     ## Enables additional debug messages.
     # enable_client_debug_messages: false
+
+    ## Registered clients. See: https://www.authelia.com/c/oidc/registered-clients
+    clients:
+      - client_id: 'grafana'
+        client_name: 'Grafana'
+        ## The digest of the plaintext secret stored in 1Password as "Grafana OIDC client_secret" and injected into
+        ## Grafana as GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET (see ../monitoring/compose.yml). Digests are safe to commit.
+        client_secret: '$pbkdf2-sha512$310000$JVdEETIS0UArbn.jeJn2rw$irQPeX3VnqXzec6LwVZHqS.UFsWkyWHB529v045yGbIPqtDoHRgfhsLIftQaqsHE/cTkAfZXaxYX91B.b8l9pQ'
+        public: false
+        authorization_policy: 'one_factor'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://grafana.taiidani.com/login/generic_oauth'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'groups'
+          - 'email'
+        response_types:
+          - 'code'
+        grant_types:
+          - 'authorization_code'
+        access_token_signed_response_alg: 'none'
+        userinfo_signed_response_alg: 'none'
+        token_endpoint_auth_method: 'client_secret_basic'
 
     ## SECURITY NOTICE: It's not recommended changing this option and values below 8 are strongly discouraged.
     # minimum_parameter_entropy: 8

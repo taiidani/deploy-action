@@ -6,3 +6,4 @@ vault = "Development"
 
 [secrets]
 "GRAFANA_DISCORD_WEBHOOK"= { provider = "onepass", value = "Grafana Alerting Discord/webhook" }
+"GRAFANA_OIDC_CLIENT_SECRET"= { provider = "onepass", value = "Grafana OIDC client_secret" }
