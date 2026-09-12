@@ -1319,6 +1319,31 @@ identity_providers:
         userinfo_signed_response_alg: 'none'
         token_endpoint_auth_method: 'client_secret_basic'
 
+      - client_id: 'groceries'
+        client_name: 'Groceries'
+        ## The digest of the plaintext secret stored in 1Password as "Groceries OIDC client_secret" and injected into
+        ## Groceries as OIDC_CLIENT_SECRET (see ../../groceries/deploy/compose.yml). Digests are safe to commit.
+        client_secret: '$pbkdf2-sha512$310000$zdpdsRYnbwosepqU1mvIJA$LzZCTbWKwFP8SzVvLYq2tb.dx3xX3meeefrZSaLciKoCKkpyBaYTt1GMk.S1RpNpvrE5beF9tlw6O6XPS.7KHQ'
+        public: false
+        authorization_policy: 'one_factor'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://groceries.taiidani.com/auth/callback'
+          - 'http://localhost:3000/auth/callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'groups'
+          - 'email'
+        response_types:
+          - 'code'
+        grant_types:
+          - 'authorization_code'
+        access_token_signed_response_alg: 'none'
+        userinfo_signed_response_alg: 'none'
+        token_endpoint_auth_method: 'client_secret_basic'
+
     ## SECURITY NOTICE: It's not recommended changing this option and values below 8 are strongly discouraged.
     # minimum_parameter_entropy: 8
 
