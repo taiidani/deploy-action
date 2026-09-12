@@ -1344,6 +1344,22 @@ identity_providers:
         userinfo_signed_response_alg: 'none'
         token_endpoint_auth_method: 'client_secret_basic'
 
+      - client_id: 'groceries-obsidian'
+        client_name: 'Groceries (Obsidian Aisle4)'
+        ## Public client for the Aisle4 Obsidian plugin: uses the OAuth 2.0 Device Authorization Grant (RFC 8628)
+        ## since the plugin has no redirect target (and must work on Obsidian mobile, which can't run a local
+        ## HTTP listener). No client secret or redirect_uris are needed for this flow.
+        public: true
+        authorization_policy: 'one_factor'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'email'
+          - 'groups'
+        grant_types:
+          - 'urn:ietf:params:oauth:grant-type:device_code'
+        token_endpoint_auth_method: 'none'
+
     ## SECURITY NOTICE: It's not recommended changing this option and values below 8 are strongly discouraged.
     # minimum_parameter_entropy: 8
 
