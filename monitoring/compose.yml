@@ -44,7 +44,7 @@ services:
   # Log aggregation. Per-host Grafana Alloy agents (see ../alloy/) push Docker
   # container logs here. LAN-only (port 3100) so off-host agents can reach it.
   monitoring-loki:
-    image: grafana/loki:3.7.3
+    image: grafana/loki:3.7.8
     x-ports:
       - "3100:3100/tcp@host"
     x-machines: monitoring
