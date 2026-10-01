@@ -23,7 +23,7 @@ services:
       - monitoring-prometheus
 
   monitoring-prometheus:
-    image: prom/prometheus:v3.13.0
+    image: prom/prometheus:v3.15.0
     x-ports:
       - "9095:9090/tcp@host"
     x-machines: monitoring
