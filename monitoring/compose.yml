@@ -63,7 +63,7 @@ services:
   # receive OTLP traces from local apps and forward them here. LAN-only so
   # off-host agents can reach it.
   monitoring-tempo:
-    image: grafana/tempo:3.0.2
+    image: grafana/tempo:3.0.3
     x-ports:
       - "3200:3200/tcp@host" # Tempo query API (Grafana datasource)
       # OTLP gRPC receiver. Published on host 4417 because the local Alloy on
