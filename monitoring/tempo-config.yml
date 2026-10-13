@@ -19,18 +19,18 @@ distributor:
         http:
           endpoint: 0.0.0.0:4318
 
-# 30-day retention, matching Prometheus and Loki. Retention is enforced by the
+# 14-day retention, matching Prometheus and Loki. Retention is enforced by the
 # backend scheduler (which plans compaction jobs) and the worker (which runs
 # them); both need the value.
 backend_scheduler:
   provider:
     compaction:
       compaction:
-        block_retention: 720h
+        block_retention: 360h
 
 backend_worker:
   compaction:
-    block_retention: 720h
+    block_retention: 360h
 
 storage:
   trace:
