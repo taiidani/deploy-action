@@ -1,11 +1,13 @@
 services:
   alloy:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: grafana/alloy:v1.17.1
     restart: unless-stopped
     deploy:
       mode: global
+    configs:
+      - source: alloy_config
+        target: /etc/alloy/config.alloy
+        mode: 0644
     command:
       - run
       - /etc/alloy/config.alloy
@@ -23,11 +25,13 @@ services:
       - "4318:4318@host"
 
   ebpf-autoinstrumenter:
-    build:
-      context: .
-      dockerfile: obi.Dockerfile
+    image: otel/ebpf-instrument:main
     deploy:
       mode: global
+    configs:
+      - source: obi_config
+        target: /etc/obi/config.yml
+        mode: 0644
     pid: 'host'
     privileged: true
     environment:
@@ -42,3 +46,9 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+configs:
+  alloy_config:
+    file: ./config.alloy
+  obi_config:
+    file: ./obi-config.yml
