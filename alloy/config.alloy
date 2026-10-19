@@ -62,6 +62,21 @@ otelcol.processor.attributes "default" {
 	}
 
 	output {
+		traces = [otelcol.processor.filter.drop_ping.input]
+	}
+}
+
+// Drop healthcheck "ping" spans; they are noise and don't need observability.
+otelcol.processor.filter "drop_ping" {
+	error_mode = "ignore"
+
+	traces {
+		span = [
+			`IsMatch(name, "(?i)^ping$")`,
+		]
+	}
+
+	output {
 		traces = [otelcol.processor.batch.default.input]
 	}
 }
