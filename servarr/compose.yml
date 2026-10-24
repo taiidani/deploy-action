@@ -3,8 +3,8 @@ services:
     image: ghcr.io/hotio/radarr
     restart: unless-stopped
     network_mode: service:gluetun
-    mem_limit: 600m
-    mem_reservation: 50m
+    # mem_limit: 600m
+    # mem_reservation: 50m
     environment:
       - PUID=1000
       - PGID=1000
@@ -20,8 +20,8 @@ services:
     image: ghcr.io/hotio/sonarr
     restart: unless-stopped
     network_mode: service:gluetun
-    mem_limit: 600m
-    mem_reservation: 50m
+    # mem_limit: 600m
+    # mem_reservation: 50m
     environment:
       - PUID=1000
       - PGID=1000
@@ -39,8 +39,8 @@ services:
     image: lscr.io/linuxserver/qbittorrent:latest
     restart: unless-stopped
     network_mode: service:gluetun
-    mem_limit: 600m
-    mem_reservation: 50m
+    # mem_limit: 600m
+    # mem_reservation: 50m
     environment:
       - PUID=1000
       - PGID=1000
@@ -59,8 +59,8 @@ services:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
-    mem_limit: 600m
-    mem_reservation: 50m
+    # mem_limit: 600m
+    # mem_reservation: 50m
     environment:
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
@@ -77,13 +77,15 @@ services:
       - "8989:8989"
       # Prowlarr
       - "9696:9696"
+      # Cleanuparr
+      - "11011:11011"
 
   prowlarr:
     image: ghcr.io/hotio/prowlarr
     restart: unless-stopped
     network_mode: service:gluetun
-    mem_limit: 600m
-    mem_reservation: 50m
+    # mem_limit: 600m
+    # mem_reservation: 50m
     environment:
       - PUID=1000
       - PGID=1000
@@ -93,3 +95,17 @@ services:
     volumes:
       - /data/prowlarr:/config
 
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    restart: unless-stopped
+    network_mode: service:gluetun
+    volumes:
+      - /data/cleanuparr:/config
+      - /data/downloads:/downloads
+    environment:
+      - PORT=11011
+      - BASE_PATH=
+      - PUID=1000
+      - PGID=1000
+      - UMASK=022
+      - TZ=Etc/UTC
