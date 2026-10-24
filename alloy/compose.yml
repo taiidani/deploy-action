@@ -14,9 +14,16 @@ services:
       - --storage.path=/var/lib/alloy/data
       - --server.http.listen-addr=0.0.0.0:12345
     mem_limit: 500m
+    environment:
+      GRAFANA_CLOUD_TOKEN: secret://GRAFANA_CLOUD_TOKEN
+      GRAFANA_CLOUD_LOKI_URL: secret://GRAFANA_CLOUD_LOKI_URL
+      GRAFANA_CLOUD_LOKI_USER: secret://GRAFANA_CLOUD_LOKI_USER
+      GRAFANA_CLOUD_TEMPO_URL: secret://GRAFANA_CLOUD_TEMPO_URL
+      GRAFANA_CLOUD_TEMPO_USER: secret://GRAFANA_CLOUD_TEMPO_USER
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "/data/alloy:/var/lib/alloy/data"
+      - "/etc/hostname:/etc/host_hostname:ro"
     # Alloy UI (optional, LAN-only). Useful for debugging the pipeline.
     x-ports:
       - "12345:12345@host"
@@ -52,3 +59,15 @@ configs:
     file: ./config.alloy
   obi_config:
     file: ./obi-config.yml
+
+secrets:
+  GRAFANA_CLOUD_TOKEN:
+    x-command: fnox get GRAFANA_CLOUD_TOKEN
+  GRAFANA_CLOUD_LOKI_URL:
+    x-command: fnox get GRAFANA_CLOUD_LOKI_URL
+  GRAFANA_CLOUD_LOKI_USER:
+    x-command: fnox get GRAFANA_CLOUD_LOKI_USER
+  GRAFANA_CLOUD_TEMPO_URL:
+    x-command: fnox get GRAFANA_CLOUD_TEMPO_URL
+  GRAFANA_CLOUD_TEMPO_USER:
+    x-command: fnox get GRAFANA_CLOUD_TEMPO_USER

@@ -1,3 +1,9 @@
+// The real machine hostname (mounted from /etc/hostname). constants.hostname
+// returns the container's own hostname (e.g. "alloy-vo1c"), not the machine's.
+local.file "hostname" {
+	filename = "/etc/host_hostname"
+}
+
 // Discover all containers on this host via the Docker socket.
 discovery.docker "containers" {
 	host = "unix:///var/run/docker.sock"
@@ -22,15 +28,26 @@ loki.source.docker "containers" {
 	forward_to = [loki.write.default.receiver]
 }
 
-// Ship logs to the central Loki on terra. constants.hostname keeps this file
-// identical on every host while still labeling logs by their source machine.
+// Ship logs to the central Loki on terra and Grafana Cloud. Reading the host's
+// hostname keeps this file identical on every host while still labeling logs
+// by their source machine.
 loki.write "default" {
 	endpoint {
 		url = "http://monitoring-loki.internal:3100/loki/api/v1/push"
 	}
 
+	// Grafana Cloud (dual-write during migration).
+	endpoint {
+		url = sys.env("GRAFANA_CLOUD_LOKI_URL")
+
+		basic_auth {
+			username = sys.env("GRAFANA_CLOUD_LOKI_USER")
+			password = sys.env("GRAFANA_CLOUD_TOKEN")
+		}
+	}
+
 	external_labels = {
-		host = constants.hostname,
+		host = string.trim_space(local.file.hostname.content),
 	}
 }
 
@@ -57,7 +74,7 @@ otelcol.receiver.otlp "default" {
 otelcol.processor.attributes "default" {
 	action {
 		key    = "host.name"
-		value  = constants.hostname
+		value  = string.trim_space(local.file.hostname.content)
 		action = "upsert"
 	}
 
@@ -84,7 +101,24 @@ otelcol.processor.filter "drop_ping" {
 // Batch spans before shipping to cut network overhead.
 otelcol.processor.batch "default" {
 	output {
-		traces = [otelcol.exporter.otlp.tempo.input]
+		traces = [
+			otelcol.exporter.otlp.tempo.input,
+			otelcol.exporter.otlp.grafana_cloud.input,
+		]
+	}
+}
+
+// Grafana Cloud Tempo (dual-write during migration). The endpoint must be
+// host:port with no scheme, e.g. "tempo-prod-XX-prod-REGION.grafana.net:443".
+otelcol.auth.basic "grafana_cloud" {
+	username = sys.env("GRAFANA_CLOUD_TEMPO_USER")
+	password = sys.env("GRAFANA_CLOUD_TOKEN")
+}
+
+otelcol.exporter.otlp "grafana_cloud" {
+	client {
+		endpoint = sys.env("GRAFANA_CLOUD_TEMPO_URL")
+		auth     = otelcol.auth.basic.grafana_cloud.handler
 	}
 }
 

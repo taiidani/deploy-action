@@ -1,0 +1,12 @@
+default_provider = "onepass"
+
+[providers.onepass]
+type = "1password"
+vault = "Development"
+
+[secrets]
+"GRAFANA_CLOUD_TOKEN"= { provider = "onepass", value = "Grafana Cloud/credential" }
+"GRAFANA_CLOUD_LOKI_URL"= { provider = "onepass", value = "Grafana Cloud/loki-remote-write-endpoint" }
+"GRAFANA_CLOUD_LOKI_USER"= { provider = "onepass", value = "Grafana Cloud/loki-username" }
+"GRAFANA_CLOUD_TEMPO_URL"= { provider = "onepass", value = "Grafana Cloud/tempo-remote-write-endpoint" }
+"GRAFANA_CLOUD_TEMPO_USER"= { provider = "onepass", value = "Grafana Cloud/tempo-username" }
