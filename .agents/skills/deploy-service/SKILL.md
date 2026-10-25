@@ -59,9 +59,9 @@ Uncloud extends the Compose format with `x-` keys used throughout this repo:
 - **`x-ports`** — port publishing:
   - `domain:port/https` — public HTTPS endpoint through Uncloud's managed Caddy (e.g. `taiidani.com:3000/https`)
   - `"8081:8080/tcp@host"` — publish directly on the host's network interface (LAN-only, no ingress)
-- **`x-machines`** — pin a service to a specific machine (e.g. `x-machines: monitoring`)
-- **`x-command`** (on `secrets:` entries) — command Uncloud runs to resolve a secret value (e.g. `x-command: fnox get GRAFANA_DISCORD_WEBHOOK`)
-- **`deploy.mode: global`** — run one container per machine (used by per-host agents like `alloy/` and `cadvisor/`)
+- **`x-machines`** — pin a service to a specific machine (e.g. `x-machines: web`)
+- **`x-command`** (on `secrets:` entries) — command Uncloud runs to resolve a secret value (e.g. `x-command: fnox get AUTHELIA_JWT_SECRET`)
+- **`deploy.mode: global`** — run one container per machine
 
 ## Ingress
 
@@ -84,19 +84,16 @@ Services store persistent data on the host, typically under `/data/<service>/...
 
 ```yaml
 volumes:
-  - /data/monitoring/tempo:/var/tempo
+  - /data/authelia/config:/config
 ```
 
 ## Reference: active services
 
-- `alloy/` - Per-host log shipper (Grafana Alloy, `deploy.mode: global`)
-- `cadvisor/` - Per-host container metrics exporter (`deploy.mode: global`)
 - `caddy/` - HTTP reverse proxy (managed by Uncloud)
 - `gitea/` - Self-hosted Git service
 - `homepage/` - Dashboard homepage
 - `immich/` - Photo management
 - `lil-dumpster/` - Discord bot with Redis
-- `monitoring/` - Grafana + Prometheus + Loki + Tempo observability stack (pinned to the `monitoring` machine)
 - `plex/` - Media server (pinned to the `media` machine)
 - `redis/` - Standalone Redis instance
 - `servarr/` - Media management stack (Sonarr, Radarr, etc.) — **manual `docker compose`, not Uncloud**

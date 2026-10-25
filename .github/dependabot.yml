@@ -2,9 +2,7 @@ version: 2
 updates:
   - package-ecosystem: docker-compose
     directories:
-      - /alloy
       - /caddy
-      - /cadvisor
       - /gitea
       - /groceries
       - /guess-my-word
@@ -12,7 +10,6 @@ updates:
       - /immich
       - /jellyfin
       - /lil-dumpster
-      - /monitoring
       - /no-time-to-explain
       - /plex
       - /redis

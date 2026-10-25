@@ -1298,14 +1298,14 @@ identity_providers:
       - client_id: 'grafana'
         client_name: 'Grafana'
         ## The digest of the plaintext secret stored in 1Password as "Grafana OIDC client_secret" and injected into
-        ## Grafana as GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET (see ../monitoring/compose.yml). Digests are safe to commit.
+        ## Grafana Cloud via Terraform (see the taiidani/monitoring repo, terraform/sso.tf). Digests are safe to commit.
         client_secret: '$pbkdf2-sha512$310000$JVdEETIS0UArbn.jeJn2rw$irQPeX3VnqXzec6LwVZHqS.UFsWkyWHB529v045yGbIPqtDoHRgfhsLIftQaqsHE/cTkAfZXaxYX91B.b8l9pQ'
         public: false
         authorization_policy: 'one_factor'
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
-          - 'https://grafana.taiidani.com/login/generic_oauth'
+          - 'https://taiidani.grafana.net/login/generic_oauth'
         scopes:
           - 'openid'
           - 'profile'

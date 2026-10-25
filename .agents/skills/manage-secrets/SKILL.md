@@ -9,8 +9,8 @@ Secrets are stored in 1Password and fetched by [fnox](https://fnox.jdx.dev). **U
 
 ```yaml
 secrets:
-  GRAFANA_DISCORD_WEBHOOK:
-    x-command: fnox get GRAFANA_DISCORD_WEBHOOK
+  AUTHELIA_JWT_SECRET:
+    x-command: fnox get AUTHELIA_JWT_SECRET
 ```
 
 fnox is installed locally via the root `mise.toml` (`mise install` if it's missing). For the full deploy flow this is part of, see the `deploy-service` skill.
