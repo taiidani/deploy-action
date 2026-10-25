@@ -2,18 +2,10 @@ version: 2
 updates:
   - package-ecosystem: docker-compose
     directories:
-      - /caddy
-      - /gitea
-      - /groceries
-      - /guess-my-word
+      - /authelia
       - /homepage
-      - /immich
       - /jellyfin
       - /lil-dumpster
-      - /no-time-to-explain
-      - /plex
-      - /redis
       - /servarr
-      - /tfc-agent
     schedule:
       interval: "monthly"

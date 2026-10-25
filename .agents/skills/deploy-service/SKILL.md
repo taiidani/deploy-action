@@ -89,14 +89,10 @@ volumes:
 
 ## Reference: active services
 
-- `caddy/` - HTTP reverse proxy (managed by Uncloud)
-- `gitea/` - Self-hosted Git service
+- `authelia/` - Centralized authentication for services
 - `homepage/` - Dashboard homepage
-- `immich/` - Photo management
+- `jellyfin/` - Streaming media server
 - `lil-dumpster/` - Discord bot with Redis
-- `plex/` - Media server (pinned to the `media` machine)
-- `redis/` - Standalone Redis instance
 - `servarr/` - Media management stack (Sonarr, Radarr, etc.) — **manual `docker compose`, not Uncloud**
-- `tfc-agent/` - Terraform Cloud agents
 
 Services discover each other via cluster DNS by service name. Host-published ports use the `@host` suffix in `x-ports`.
