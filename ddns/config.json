@@ -1,0 +1,25 @@
+{
+  "settings": [
+    {
+      "provider": "digitalocean",
+      "domain": "*.taiidani.com",
+      "token": "yourtoken",
+      "ip_version": "ipv4",
+      "ipv6_suffix": ""
+    },
+    {
+      "provider": "digitalocean",
+      "domain": "guessmyword.xyz",
+      "token": "yourtoken",
+      "ip_version": "ipv4",
+      "ipv6_suffix": ""
+    },
+    {
+      "provider": "digitalocean",
+      "domain": "ryannixon.dev",
+      "token": "yourtoken",
+      "ip_version": "ipv4",
+      "ipv6_suffix": ""
+    }
+  ]
+}

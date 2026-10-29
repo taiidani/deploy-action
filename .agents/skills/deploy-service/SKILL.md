@@ -90,6 +90,7 @@ volumes:
 ## Reference: active services
 
 - `authelia/` - Centralized authentication for services
+- `ddns/` - Dynamic DNS updater for DigitalOcean
 - `homepage/` - Dashboard homepage
 - `jellyfin/` - Streaming media server
 - `lil-dumpster/` - Discord bot with Redis

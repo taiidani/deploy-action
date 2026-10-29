@@ -3,6 +3,7 @@ updates:
   - package-ecosystem: docker-compose
     directories:
       - /authelia
+      - /ddns
       - /homepage
       - /jellyfin
       - /lil-dumpster
