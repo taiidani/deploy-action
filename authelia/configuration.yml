@@ -1381,6 +1381,31 @@ identity_providers:
           - 'authorization_code'
         token_endpoint_auth_method: 'none'
 
+      - client_id: 'xUTEN_oiRp4IbRC9.ifGDPb1wcAdPXotoyGvpcKWjenVKKbovjT8uejZZnsda4oQs5JTnqYM'
+        client_name: 'Arcane'
+        ## The digest of the plaintext secret stored in 1Password as "Groceries OIDC client_secret" and injected into
+        ## Groceries as OIDC_CLIENT_SECRET (see ../../groceries/deploy/compose.yml). Digests are safe to commit.
+        client_secret: '$pbkdf2-sha512$310000$GhdTUlaNRBGR4Ge5CDraXw$30vsEA60Y50e5zNGPe5RBvc3naIQC5lgJPawwXOwvrLuUAws9QD3PzreVAGDymHzbS3w6O5LFtQZXUXoc4jL4g'
+        public: false
+        authorization_policy: 'one_factor'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://arcane.taiidani.com/auth/oidc/callback'
+          - 'http://monitoring.lan:3552/auth/oidc/callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'groups'
+          - 'email'
+        response_types:
+          - 'code'
+        grant_types:
+          - 'authorization_code'
+        access_token_signed_response_alg: 'none'
+        userinfo_signed_response_alg: 'none'
+        token_endpoint_auth_method: 'client_secret_basic'
+
     ## SECURITY NOTICE: It's not recommended changing this option and values below 8 are strongly discouraged.
     # minimum_parameter_entropy: 8
 
